@@ -6,11 +6,12 @@ from datetime import timedelta
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_TOKEN
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .activity import ActivityTracker
@@ -23,6 +24,7 @@ from .const import (
     MEMBER_BINARY_KEYS,
     MEMBER_SENSOR_KEYS,
 )
+from .dashboard import SIGNAL, FeedReader
 from .gateway import DiscordGateway
 from .groups import CENTRAL_KEYS
 from .voice import BotVoice
@@ -48,11 +50,20 @@ class DiscordCoordinator(DataUpdateCoordinator[dict[str, Member]]):
         self.gateway = DiscordGateway(hass, entry.data[CONF_TOKEN], self.guild_id)
         self.voice = BotVoice(hass, self.gateway, self.guild_id)
         self.entry_id = entry.entry_id
+        self.feed = FeedReader(self)
         self.activity = ActivityTracker(hass, self.guild_id)
+        self.private_messages = {}
+        self.sending_messages = set()
         self._syncing = False
         self._pending_updates = {}
         self.gateway.on_member_update = self._handle_gateway_update
         self.gateway.on_connection_change = self._handle_connection_change
+        self.gateway.on_channels_update = self.async_update_listeners
+
+    @callback
+    def async_update_listeners(self):
+        super().async_update_listeners()
+        async_dispatcher_send(self.hass, SIGNAL)
 
     def _handle_gateway_update(self, member_id, state):
         if self.data is None or member_id not in self.data:
@@ -74,6 +85,8 @@ class DiscordCoordinator(DataUpdateCoordinator[dict[str, Member]]):
             self.hass.async_create_task(self.async_request_refresh())
 
     async def async_close(self):
+        self.private_messages.clear()
+        self.feed._cache.clear()
         try:
             await self.voice.async_close()
         finally:
@@ -105,6 +118,9 @@ class DiscordCoordinator(DataUpdateCoordinator[dict[str, Member]]):
                 key: value for key, value in self.activity.records.items() if key in members
             }
             self.activity.schedule_save()
+            self.private_messages = {
+                key: value for key, value in self.private_messages.items() if key in members
+            }
             self._reconcile_registry(snapshot)
             return snapshot
         except DiscordAuthError as err:

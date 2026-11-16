@@ -1,6 +1,12 @@
 # Änderungen
 
-## Unveröffentlicht – Installationskorrektur
+## 1.0.0
+
+- Discord-Channel-Overview mit Kategorie-/Kanalhierarchie, Avataren, Presence und Mute-Anzeigen; Live-Daten über authentifizierte WebSockets.
+- Discord-Text-Channel-Feed mit visuellem Kanalwähler, den letzten 50 Nachrichten und begrenztem 15-Sekunden-Cache.
+- Pro Mitglied Textfeld „Private Nachricht“ und Button „Private Nachricht senden“, inklusive Fehler- und Doppelversandschutz.
+- Bot-Lautstärke 0–100 % mit gespeichertem Standardwert 50 % sowie Wiedergabestatus; deutsche/englische Beschriftungen ergänzt.
+- Dashboard-Installation, Zugriffsmodell, zusätzliche Discord-Rechte und Darstellungsgrenzen dokumentiert.
 
 - Konflikt zwischen Discords Voice-Extra und Home Assistants PyNaCl 1.6.2 behoben: Discord, PyNaCl und DAVE separat deklariert.
 - Paketauflösung gegen Home-Assistant-Installationsvorgaben in CI ergänzt; Vorgaben von 2026.10.4 und 2026.11.1 geprüft.

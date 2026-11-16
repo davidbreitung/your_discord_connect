@@ -22,6 +22,8 @@ class MemberState:
     microphone_muted: bool | None = None
     in_afk_channel: bool | None = None
     last_gateway_event: datetime | None = None
+    voice_channel_id: str | None = None
+    avatar_url: str | None = None
 
 
 class DiscordGateway:
@@ -43,6 +45,7 @@ class DiscordGateway:
         self.on_member_update = None
         self.on_connection_change = None
         self.on_bot_update = None
+        self.on_channels_update = None
         self._channels = None
         self._channel_revision = 0
 
@@ -133,23 +136,30 @@ class DiscordGateway:
             self.on_bot_update()
 
     @property
-    def channels(self):
+    def all_channels(self):
         if self._channels is not None:
             return self._channels
         guild = self.guild
-        return [*guild.voice_channels, *guild.stage_channels] if guild else []
+        return list(guild.channels) if guild else []
+
+    @property
+    def channels(self):
+        return [
+            c
+            for c in self.all_channels
+            if c.type in (discord.ChannelType.voice, discord.ChannelType.stage_voice)
+        ]
 
     def _channel_changed(self, channel, *, deleted=False):
         self._channel_revision += 1
-        channels = {c.id: c for c in self.channels}
+        channels = {c.id: c for c in self.all_channels}
         channels.pop(channel.id, None)
-        if not deleted and channel.type in (
-            discord.ChannelType.voice,
-            discord.ChannelType.stage_voice,
-        ):
+        if not deleted:
             channels[channel.id] = channel
         self._channels = list(channels.values())
         self._notify_bot()
+        if self.on_channels_update:
+            self.on_channels_update()
 
     async def refresh_channels(self):
         """Explicitly re-fetch channels on every full member sync, not just from cache."""
@@ -163,11 +173,7 @@ class DiscordGateway:
         except (discord.DiscordException, TimeoutError) as err:
             raise DiscordError("Discord channel synchronization failed") from err
         if revision == self._channel_revision:
-            self._channels = [
-                c
-                for c in channels
-                if c.type in (discord.ChannelType.voice, discord.ChannelType.stage_voice)
-            ]
+            self._channels = channels
         self._notify_bot()
 
     def _state(self, member, voice, *, event_time=None):
@@ -183,6 +189,10 @@ class DiscordGateway:
             if voice and afk
             else False,
             last_gateway_event=event_time,
+            voice_channel_id=str(channel.id) if channel else None,
+            avatar_url=str(member.display_avatar.url)
+            if getattr(member, "display_avatar", None)
+            else None,
         )
 
     def _publish(self, member, voice):

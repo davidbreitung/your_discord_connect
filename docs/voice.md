@@ -1,13 +1,15 @@
 # Bot-Gerät, Kanalauswahl und TTS-Durchsagen
 
 Ab Version **0.4.0** gibt es in der Untergruppe **zentrale Konfiguration** zusätzlich
-ein Gerät **Bot: <Bot-Name>**. Es besitzt drei Entitäten:
+ein Gerät **Bot: <Bot-Name>**. Es besitzt fünf Entitäten:
 
 | Entität | Funktion |
 | --- | --- |
 | Sprachkanal | Dropdown zum Beitreten, Wechseln und Verlassen. |
 | TTS-Nachricht | Eingabefeld für bis zu 255 Zeichen, entsprechend Home Assistants Zustandslängenlimit. |
 | TTS ausführen | Erzeugt mit Home Assistants Standard-TTS-Anbieter Sprache und spielt sie im gewählten Kanal ab. |
+| Wiedergabestatus | Nicht verbunden, bereit, Vorbereitung, Wiedergabe oder Fehler; zusätzlich Anzahl wartender Durchsagen. |
+| Lautstärke | 0–100 %, voreingestellt auf 50 %. Änderungen gelten auch während der Wiedergabe und bleiben nach Neustarts erhalten. |
 
 Der eigene Bot wird anhand der ID des authentifizierten Discord-Benutzers erkannt,
 nicht anhand seines Namens. Nur dieses Mitglied wird aus der Gruppe **Benutzer**
@@ -16,6 +18,8 @@ wird kein Mitglied ausgeblendet. Die Serverzähler enthalten weiterhin alle Mitg
 einschließlich des eigenen Bots. Vorhandene Mitgliederentitäten des eigenen Bots
 werden entfernt und durch das zentrale Bot-Gerät ersetzt; darauf verweisende
 Automationen gegebenenfalls anpassen. Die übrigen Mitgliedergeräte behalten ihre IDs.
+
+0 % schaltet nur die Audioausgabe stumm; der Bot bleibt im Kanal.
 
 ## Voraussetzungen
 
@@ -29,7 +33,7 @@ Automationen gegebenenfalls anpassen. Die übrigen Mitgliedergeräte behalten ih
    die erste verfügbare TTS-Entität beziehungsweise einen vorhandenen Legacy-Anbieter.
    Dies ist keine eigene Auswahl der Integration und nicht zwingend dieselbe
    Stimme wie die einer individuell konfigurierten Assist-Pipeline.
-4. **FFmpeg mit Opus-Unterstützung** muss verfügbar sein. Die Integration verwendet
+4. **FFmpeg und die native Opus-Bibliothek (libopus)** muss verfügbar sein. Die Integration verwendet
    den in Home Assistants FFmpeg-Integration konfigurierten Programm-Pfad.
    Home Assistant OS/Container bringt FFmpeg üblicherweise mit. Bei eigener
    Python-Installation FFmpeg zusätzlich installieren. Es wird kein FFmpeg über

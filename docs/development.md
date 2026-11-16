@@ -21,7 +21,7 @@ REST nutzt Home Assistants `aiohttp`; das Gateway verwendet `discord.py==2.7.1` 
 `PyNaCl==1.6.2` und `davey==0.2.0`.
 Die Bibliothek übernimmt Heartbeats, Reconnect, Session Resume und DAVE für Voice.
 Für den nativen Audiotest FFmpeg mit Opus-Encoder installieren (unter Debian/Ubuntu
-`sudo apt-get install ffmpeg`). CI installiert FFmpeg ausdrücklich.
+`sudo apt-get install ffmpeg libopus0`). CI installiert FFmpeg ausdrücklich.
 
 In der Codex-Cloud liegt der Checkout unter `/workspace/your_discord_connect`.
 Bei schreibgeschütztem Benutzer-Cache vor den Befehlen setzen:
@@ -43,7 +43,7 @@ zusätzliches Git-Worktree anlegen, außer es wird ausdrücklich gewünscht.
 | `config_flow.py` | Token, Serverauswahl, Zugriffsprüfung, Optionen, erneute Anmeldung. |
 | `coordinator.py` | Ein zentraler Mitgliederabruf pro Server und Intervall. |
 | `gateway.py` | Gateway-Lebenszyklus, Presence-Abfragen, Bot-Identität und expliziter Kanalabruf je Vollabgleich. |
-| `voice.py` | Voice-Verbindung, HA-Standard-TTS, begrenzte Queue und FFmpeg-Opus-Wiedergabe. |
+| `voice.py` | Voice-Verbindung, HA-Standard-TTS, begrenzte Queue und FFmpeg-PCM-Verarbeitung und Opus-Wiedergabe. |
 | `bot_entity.py`, `select.py`, `text.py` | Zentrales Bot-Gerät und Push-Aktualisierung seiner Bedienelemente. |
 | `entity.py` | Gemeinsame Geräteidentität und Mitgliederentdeckung pro Plattform. |
 | `sensor.py`, `binary_sensor.py` | Sieben Sensoren und vier Binärsensoren pro Mitglied sowie drei zentrale Zähler. |
@@ -197,3 +197,23 @@ Das Discord-Voice-Extra setzt eine mit HA unvereinbare PyNaCl-Obergrenze. Deshal
 werden die benötigten Voice-Pakete separat deklariert und die tatsächlich von
 discord.py genutzte AEAD-Verschlüsselung mit dieser Kombination getestet.
 Die Entwicklungsumgebung verwendet außerdem HA-kompatibles CFFI 2.0.0.
+
+## Dashboard-Frontend testen
+
+Die Karten bestehen aus einem lokalen JavaScript-Modul ohne Laufzeitabhängigkeiten
+oder Build-Schritt. `frontend/discord-cards.js` muss im Integrationsordner enthalten
+sein. `dashboard.py` registriert die statische Ressource und die authentifizierten
+WebSocket-Kommandos für Serverliste, Voice-Abonnement und Text-Feed.
+
+```sh
+npm ci
+npx playwright install chromium
+npm test
+```
+
+Bei vorhandenem Chromium alternativ `CHROMIUM_PATH=/usr/bin/chromium npm test`.
+Die Browsertests verwenden simulierte HA-/Discord-Daten, prüfen DOM-Darstellung,
+Live-Updates, Editor, Zugriff auf unsichere Links, mobiles Layout und Aufräumen
+der Abonnements. Ein Demo-Screenshot entsteht unter `test-results/discord-cards.png`.
+Die Python-Tests prüfen zusätzlich echte HA-WebSocket-Kommandos, Berechtigungen,
+Kanalisolierung, Feed-Cache sowie Direktnachrichten über die HA-Entitäten.

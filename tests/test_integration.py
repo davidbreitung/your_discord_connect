@@ -176,7 +176,7 @@ def state(hass, key, domain="sensor", member="1"):
 async def test_all_member_entities_and_manual_sync(hass, entry, discord, gateway):
     await setup(hass, entry)
     entities = er.async_entries_for_config_entry(er.async_get(hass), entry.entry_id)
-    assert len(entities) == 31  # Eleven per member, four central entities and five bot entities.
+    assert len(entities) == 35  # Thirteen per member, four central entities and five bot entities.
     assert state(hass, "username") == "alice.real"
     assert state(hass, "presence") == "online"
     assert state(hass, "in_voice_channel", "binary_sensor") == "on"

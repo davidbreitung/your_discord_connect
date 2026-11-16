@@ -7,6 +7,7 @@ from homeassistant.core import HomeAssistant
 from .activity import ActivityTracker
 from .const import CONF_GUILD_ID
 from .coordinator import DiscordCoordinator
+from .dashboard import async_setup_dashboard
 from .groups import setup_groups
 from .services import async_register_services
 from .voice import volume_store
@@ -23,6 +24,7 @@ PLATFORMS = [
 
 
 async def async_setup(hass: HomeAssistant, config: dict) -> bool:
+    await async_setup_dashboard(hass)
     async_register_services(hass)
     return True
 

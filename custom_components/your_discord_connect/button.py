@@ -2,9 +2,13 @@
 
 from homeassistant.components.button import ButtonEntity
 from homeassistant.exceptions import HomeAssistantError
+from homeassistant.helpers import device_registry as dr
 
 from .bot_entity import BotEntity
+from .const import DOMAIN
+from .entity import DiscordMemberEntity, add_member_entities
 from .groups import central_device_info
+from .services import async_send_direct_message
 
 
 async def async_setup_entry(hass, entry, async_add_entities):
@@ -12,6 +16,34 @@ async def async_setup_entry(hass, entry, async_add_entities):
         [DiscordSyncButton(entry.runtime_data), BotTTSButton(entry.runtime_data, "tts_execute")],
         config_subentry_id=entry.runtime_data.groups["central"],
     )
+    add_member_entities(
+        entry,
+        async_add_entities,
+        lambda member_id: [
+            PrivateMessageButton(entry.runtime_data, member_id, "private_message_send")
+        ],
+    )
+
+
+class PrivateMessageButton(DiscordMemberEntity, ButtonEntity):
+    _attr_icon = "mdi:send"
+
+    async def async_press(self):
+        coordinator = self.coordinator
+        if self.member_id in coordinator.sending_messages:
+            raise HomeAssistantError(translation_domain=DOMAIN, translation_key="dm_sending")
+        device = dr.async_get(self.hass).async_get_device_by_identifier(
+            (DOMAIN, self._identifier), coordinator.entry_id
+        )
+        content = coordinator.private_messages.get(self.member_id, "")
+        coordinator.sending_messages.add(self.member_id)
+        try:
+            await async_send_direct_message(self.hass, device.id if device else None, content)
+            if coordinator.private_messages.get(self.member_id) == content:
+                coordinator.private_messages.pop(self.member_id, None)
+                coordinator.async_update_listeners()
+        finally:
+            coordinator.sending_messages.discard(self.member_id)
 
 
 class DiscordSyncButton(ButtonEntity):

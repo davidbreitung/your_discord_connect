@@ -4,7 +4,7 @@ Eine eigenständige **Custom Integration für Home Assistant**, die Mitglieder e
 Discord-Servers als virtuelle Geräte abbildet. Kein separater Bot-Prozess und kein
 Home-Assistant-Add-on erforderlich.
 
-**Stand: 0.4.0 – Entwicklungsversion.** Unterstützte Testbasis: Home Assistant
+**Stand: 1.0.0.** Unterstützte Testbasis: Home Assistant
 **2026.10.4** mit Python **3.14.2 oder neuer**. Ältere Home-Assistant-Versionen sind
 derzeit nicht unterstützt. Automatisierte Tests simulieren Discord-Antworten;
 ein Test mit einem echten Discord-Server steht noch aus.
@@ -14,7 +14,7 @@ ein Test mit einem echten Discord-Server steht noch aus.
 - Einrichtung über die Home-Assistant-Oberfläche: Bot-Token eingeben, Server aus
   einer automatisch ermittelten Liste auswählen, Mitgliederzugriff prüfen lassen.
 - Zentrale Konfiguration mit Synchronisationsknopf und drei Serverzählern.
-- Mitgliedergeräte in der Gruppe **Benutzer**, mit elf Entitäten pro Mitglied.
+- Mitgliedergeräte in der Gruppe **Benutzer**, mit dreizehn Entitäten pro Mitglied.
 - Anzeigename: Server-Spitzname → globaler Discord-Anzeigename → Benutzername.
 - Abgleich beim Start und alle **30 Minuten**; zentral pro Server auf ganze
   **1 bis 1440 Minuten** einstellbar.
@@ -26,7 +26,11 @@ ein Test mit einem echten Discord-Server steht noch aus.
   derselbe Server kann nur einmal eingerichtet werden.
 - Deutsche und englische Oberfläche; erneute Anmeldung bei ungültigem Token.
 
-Private Textnachrichten können über eine Aktion oder aus anderen Integrationen
+Die Karten **Discord-Channel-Overview** und **Discord-Text-Channel-Feed** zeigen
+Sprachkanalbelegung und Textkanal-Nachrichten in Discord-naher Optik.
+[Einrichtung und Bedienung der Karten](docs/dashboard.md).
+
+Private Textnachrichten können am Benutzergerät, über eine Aktion oder aus anderen Integrationen
 gesendet werden. TTS-Durchsagen sind über das Bot-Gerät möglich. Rollen, beliebige
 Audiostreams und Video sind noch nicht enthalten.
 Weitere Attribute können auf den bestehenden Geräte-IDs aufbauen.
@@ -67,7 +71,7 @@ Jeder Server hat zwei Home-Assistant-Untergruppen (Config Subentries):
 
 - **zentrale Konfiguration:** ein gleichnamiges Gerät mit **Benutzer jetzt synchronisieren**,
   **Alle Mitglieder**, **Online-Benutzer** und **Benutzer in Channels** sowie ein
-  zusätzliches **Bot-Gerät** mit Sprachkanal-Dropdown, **TTS-Nachricht** und **TTS ausführen**.
+  zusätzliches **Bot-Gerät** mit Sprachkanal-Dropdown, **TTS-Nachricht**, **TTS ausführen**, **Wiedergabestatus** und **Lautstärke**.
 - **Benutzer:** alle Mitgliedsgeräte außer dem eindeutig erkannten eigenen Bot, mit Modell/Typ **Benutzer**. Jedes Mitgliedsgerät
   ist über `via_device_id` mit dem zentralen Gerät verknüpft.
 

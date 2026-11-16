@@ -45,6 +45,20 @@ class Member:
     last_present: datetime | None = None
     last_absent: datetime | None = None
     last_gateway_event: datetime | None = None
+    voice_channel_id: str | None = None
+    avatar_url: str | None = None
+
+
+def avatar_url(user, member=None, guild_id=None):
+    """Use a server avatar first, then the global or default Discord avatar."""
+    user_id = str(user["id"])
+    if member and member.get("avatar") and guild_id:
+        return f"https://cdn.discordapp.com/guilds/{guild_id}/users/{user_id}/avatars/{member['avatar']}.png?size=80"
+    if user.get("avatar"):
+        return f"https://cdn.discordapp.com/avatars/{user_id}/{user['avatar']}.png?size=80"
+    discriminator = int(user.get("discriminator") or 0)
+    index = discriminator % 5 if discriminator else (int(user_id) >> 22) % 6
+    return f"https://cdn.discordapp.com/embed/avatars/{index}.png"
 
 
 class DiscordClient:
@@ -68,7 +82,7 @@ class DiscordClient:
                 headers={
                     "Authorization": f"Bot {self._token}",
                     "User-Agent": (
-                        "DiscordBot (https://github.com/davidbreitung/your_discord_connect, 0.4.0)"
+                        "DiscordBot (https://github.com/davidbreitung/your_discord_connect, 1.0.0)"
                     ),
                 },
                 params=params,
@@ -170,7 +184,9 @@ class DiscordClient:
                     username = user["username"]
                     if not isinstance(username, str) or not username:
                         raise ValueError("Invalid username")
-                    members[member_id] = Member(member_id, name, username)
+                    members[member_id] = Member(
+                        member_id, name, username, avatar_url=avatar_url(user, item, guild_id)
+                    )
                 if len(page) < 1000:
                     return members
                 next_after = str(page[-1]["user"]["id"])

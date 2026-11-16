@@ -43,7 +43,8 @@ sind noch nicht über HACS verfügbar; die reale HACS-Installation ist separat z
    ihn nicht automatisch erstellt hat.
 4. Unter **Privileged Gateway Intents** den **Server Members Intent** und
    **Presence Intent** aktivieren und speichern. Beide werden benötigt.
-5. **Message Content Intent** wird nicht benötigt.
+5. **Message Content Intent** wird nur für die optionale Text-Feed-Karte benötigt
+   (siehe [Dashboard-Anleitung](dashboard.md)); für Mitglieder und TTS nicht.
 6. Unter **Bot → Reset Token** ein Bot-Token erzeugen und sicher aufbewahren.
    Dieses später direkt in Home Assistant eingeben. Application ID, Public Key,
    OAuth Client Secret und persönliche Benutzer-Tokens sind nicht geeignet.
@@ -76,7 +77,7 @@ als online erscheinen. Sein Online-Status allein belegt keinen erfolgreichen Abg
    die Gateway-Verbindung aufgebaut. Fehlende Intents dort aktivieren und den
    Integrationseintrag anschließend neu laden.
 5. Unter **zentrale Konfiguration** erscheinen Sync-Knopf und Zähler. In der Gruppe
-   **Benutzer** erhält jedes Mitglied elf Entitäten für Namen, Presence, Sprachkanal,
+   **Benutzer** erhält jedes Mitglied dreizehn Entitäten für Namen, Presence, Sprachkanal,
    Mute, AFK und Beobachtungszeitpunkte (siehe README).
    Auch der Bot selbst zählt als Mitglied.
 
@@ -176,3 +177,10 @@ Falls die Installation weiterhin fehlschlägt, in **Einstellungen → System →
 Protokolle** den vorherigen Eintrag von `homeassistant.util.package` mit
 `Unable to install package` prüfen. Er enthält den konkreten Paket-, Download-
 oder Plattformfehler; die Meldung von `homeassistant.setup` allein genügt nicht.
+
+## Dashboard-Karten und Direktnachrichten ab 1.0.0
+
+Nach dem Update Home Assistant neu starten. Die beiden DM-Bedienelemente werden
+auf vorhandenen Benutzergeräten automatisch angelegt; Geräte-IDs bleiben bestehen.
+Für die Karten einmalig die JavaScript-Ressource registrieren und anschließend
+die Karten über den visuellen Editor hinzufügen. Siehe [Dashboard-Anleitung](dashboard.md).

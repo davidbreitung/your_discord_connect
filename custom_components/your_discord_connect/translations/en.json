@@ -88,6 +88,16 @@
       },
       "last_gateway_event": {
         "name": "Last gateway event"
+      },
+      "playback_status": {
+        "name": "Playback status",
+        "state": {
+          "disconnected": "Disconnected",
+          "idle": "Ready",
+          "preparing": "Preparing",
+          "playing": "Playing",
+          "error": "Error"
+        }
       }
     },
     "binary_sensor": {
@@ -110,6 +120,9 @@
       },
       "tts_execute": {
         "name": "Execute TTS"
+      },
+      "private_message_send": {
+        "name": "Send private message"
       }
     },
     "select": {
@@ -120,6 +133,14 @@
     "text": {
       "tts_message": {
         "name": "TTS message"
+      },
+      "private_message": {
+        "name": "Private message"
+      }
+    },
+    "number": {
+      "volume": {
+        "name": "Volume"
       }
     }
   },
@@ -180,6 +201,15 @@
     },
     "tts_interrupted": {
       "message": "The announcement was canceled, for example by a channel change or shutdown."
+    },
+    "dm_sending": {
+      "message": "A message to this member is already being sent."
+    },
+    "voice_invalid_volume": {
+      "message": "Volume must be a whole number between 0 and 100."
+    },
+    "tts_opus_unavailable": {
+      "message": "The Opus library is missing. Install libopus for audio playback."
     }
   },
   "services": {

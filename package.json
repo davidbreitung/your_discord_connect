@@ -1,0 +1,7 @@
+{
+  "name": "your-discord-connect-cards",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {"test": "node --test tests/frontend/*.test.cjs"},
+  "devDependencies": {"playwright": "1.58.2"}
+}

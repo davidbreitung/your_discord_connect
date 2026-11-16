@@ -88,6 +88,16 @@
       },
       "last_gateway_event": {
         "name": "Letztes Gateway-Ereignis"
+      },
+      "playback_status": {
+        "name": "Wiedergabestatus",
+        "state": {
+          "disconnected": "Nicht verbunden",
+          "idle": "Bereit",
+          "preparing": "Vorbereitung",
+          "playing": "Wiedergabe",
+          "error": "Fehler"
+        }
       }
     },
     "binary_sensor": {
@@ -110,6 +120,9 @@
       },
       "tts_execute": {
         "name": "TTS ausführen"
+      },
+      "private_message_send": {
+        "name": "Private Nachricht senden"
       }
     },
     "select": {
@@ -120,6 +133,14 @@
     "text": {
       "tts_message": {
         "name": "TTS-Nachricht"
+      },
+      "private_message": {
+        "name": "Private Nachricht"
+      }
+    },
+    "number": {
+      "volume": {
+        "name": "Lautstärke"
       }
     }
   },
@@ -180,6 +201,15 @@
     },
     "tts_interrupted": {
       "message": "Die Durchsage wurde abgebrochen, etwa durch Kanalwechsel oder Beenden der Integration."
+    },
+    "dm_sending": {
+      "message": "Eine Nachricht an dieses Mitglied wird bereits gesendet."
+    },
+    "voice_invalid_volume": {
+      "message": "Die Lautstärke muss eine ganze Zahl zwischen 0 und 100 sein."
+    },
+    "tts_opus_unavailable": {
+      "message": "Die Opus-Bibliothek fehlt. Installiere libopus für die Audiowiedergabe."
     }
   },
   "services": {

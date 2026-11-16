@@ -64,6 +64,7 @@ async def test_snapshot_batches_and_closes(hass, client):
         assert snapshot["1"].presence == "online"
         assert snapshot["1"].in_voice_channel is True
         assert snapshot["1"].voice_channel == "Lounge"
+        assert snapshot["1"].voice_channel_id == "10"
         assert snapshot["2"].in_voice_channel is False
         assert snapshot["2"].voice_channel is None
         query = client.get_guild.return_value.query_members

@@ -6,3 +6,5 @@ htmlcov/
 .ruff_cache/
 .ha-dev/
 *.egg-info/
+node_modules/
+test-results/
