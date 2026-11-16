@@ -4,7 +4,7 @@
     "step": {
       "user": {
         "title": "Discord-Bot verbinden",
-        "description": "Erstelle einen Bot im Discord Developer Portal, aktiviere den Server Members Intent und lade ihn auf Deinen Server ein (Scope bot; keine Administratorrechte nötig). Gib hier das Bot-Token ein. Die vollständige Anleitung steht in der Repository-Dokumentation.",
+        "description": "Erstelle einen Bot im Discord Developer Portal, aktiviere den Server Members Intent und Presence Intent und lade ihn auf Deinen Server ein (Scope bot; keine Administratorrechte nötig). Gib hier das Bot-Token ein. Die vollständige Anleitung steht in der Repository-Dokumentation.",
         "data": {
           "token": "Bot-Token"
         }
@@ -27,7 +27,7 @@
     "error": {
       "invalid_auth": "Das Bot-Token ist ungültig. Verwende ein Bot-Token, kein Benutzer-Token oder Client Secret.",
       "cannot_connect": "Discord ist nicht erreichbar. Prüfe die Internetverbindung und versuche es erneut.",
-      "missing_permissions": "Discord verweigert den Zugriff. Aktiviere Server Members Intent in den Bot-Einstellungen und prüfe, ob der Bot Mitglied dieses Servers ist.",
+      "missing_permissions": "Discord verweigert den Zugriff. Aktiviere Server Members Intent und Presence Intent in den Bot-Einstellungen und prüfe, ob der Bot Mitglied dieses Servers ist.",
       "server_not_found": "Der Server ist für diesen Bot nicht mehr erreichbar.",
       "rate_limited": "Discord begrenzt die Anfragen. Warte etwas und versuche es erneut.",
       "no_servers": "Der Bot ist noch keinem Server beigetreten. Lade ihn auf Deinen Server ein und sende das Token erneut ab."
@@ -55,6 +55,31 @@
     "sensor": {
       "display_name": {
         "name": "Anzeigename"
+      },
+      "username": {
+        "name": "Benutzername"
+      },
+      "presence": {
+        "name": "Presence-Status",
+        "state": {
+          "online": "Online",
+          "idle": "Abwesend",
+          "dnd": "Nicht stören",
+          "offline": "Offline"
+        }
+      },
+      "voice_channel": {
+        "name": "Sprachkanal"
+      }
+    },
+    "binary_sensor": {
+      "in_voice_channel": {
+        "name": "Im Sprachkanal"
+      }
+    },
+    "button": {
+      "sync": {
+        "name": "{server} synchronisieren"
       }
     }
   }

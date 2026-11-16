@@ -4,7 +4,7 @@
     "step": {
       "user": {
         "title": "Connect Discord bot",
-        "description": "Create a bot in the Discord Developer Portal, enable Server Members Intent and invite it to your server (bot scope; no administrator permission needed). Paste the bot token here. See the repository documentation for all steps.",
+        "description": "Create a bot in the Discord Developer Portal, enable Server Members Intent and Presence Intent and invite it to your server (bot scope; no administrator permission needed). Paste the bot token here. See the repository documentation for all steps.",
         "data": {
           "token": "Bot token"
         }
@@ -27,7 +27,7 @@
     "error": {
       "invalid_auth": "The bot token is invalid. Use a bot token, not a user token or client secret.",
       "cannot_connect": "Cannot reach Discord. Check your Internet connection and try again.",
-      "missing_permissions": "Discord denied access. Enable Server Members Intent in the bot settings and ensure the bot is a member of this server.",
+      "missing_permissions": "Discord denied access. Enable Server Members Intent and Presence Intent in the bot settings and ensure the bot is a member of this server.",
       "server_not_found": "The server is no longer accessible to this bot.",
       "rate_limited": "Discord is limiting requests. Wait before trying again.",
       "no_servers": "The bot has not joined any servers. Invite it to your server, then submit the token again."
@@ -55,6 +55,31 @@
     "sensor": {
       "display_name": {
         "name": "Display name"
+      },
+      "username": {
+        "name": "Username"
+      },
+      "presence": {
+        "name": "Presence",
+        "state": {
+          "online": "Online",
+          "idle": "Idle",
+          "dnd": "Do not disturb",
+          "offline": "Offline"
+        }
+      },
+      "voice_channel": {
+        "name": "Voice channel"
+      }
+    },
+    "binary_sensor": {
+      "in_voice_channel": {
+        "name": "In voice channel"
+      }
+    },
+    "button": {
+      "sync": {
+        "name": "Synchronize {server}"
       }
     }
   }

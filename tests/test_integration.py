@@ -4,6 +4,7 @@ from datetime import timedelta
 
 import pytest
 from homeassistant.config_entries import ConfigEntryState
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 from homeassistant.util import dt as dt_util
@@ -11,10 +12,17 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry, async_
 
 from custom_components.your_discord_connect.api import DiscordAuthError, DiscordError, Member
 from custom_components.your_discord_connect.const import DOMAIN
+from custom_components.your_discord_connect.gateway import MemberState
+
+pytestmark = pytest.mark.usefixtures("gateway")
 
 
 def sensors(hass, entry):
-    return er.async_entries_for_config_entry(er.async_get(hass), entry.entry_id)
+    return [
+        entity
+        for entity in er.async_entries_for_config_entry(er.async_get(hass), entry.entry_id)
+        if entity.unique_id.endswith("_display_name")
+    ]
 
 
 async def setup(hass, entry):
@@ -158,3 +166,68 @@ async def test_full_setup_from_http_responses(hass, aioclient_mock):
         dr.async_get(hass).async_get_device_by_identifier((DOMAIN, "100_1"), entry.entry_id).name
         == "Alice on Discord"
     )
+
+
+def state(hass, key, domain="sensor", member="1"):
+    entity_id = er.async_get(hass).async_get_entity_id(domain, DOMAIN, f"100_{member}_{key}")
+    return hass.states.get(entity_id).state
+
+
+async def test_all_member_entities_and_manual_sync(hass, entry, discord, gateway):
+    await setup(hass, entry)
+    entities = er.async_entries_for_config_entry(er.async_get(hass), entry.entry_id)
+    assert len(entities) == 11  # Five per member and one server synchronization button.
+    assert state(hass, "username") == "alice.real"
+    assert state(hass, "presence") == "online"
+    assert state(hass, "in_voice_channel", "binary_sensor") == "on"
+    assert state(hass, "voice_channel") == "General"
+    assert state(hass, "presence", member="2") == "offline"
+    assert state(hass, "in_voice_channel", "binary_sensor", "2") == "off"
+    assert state(hass, "voice_channel", member="2") == "unknown"
+    # A cache change alone must not publish a new entity state.
+    gateway["snapshot"].return_value = {"1": MemberState("idle", False, None)}
+    assert state(hass, "presence") == "online"
+    button = er.async_get(hass).async_get_entity_id("button", DOMAIN, "100_sync")
+    assert hass.states.get(button).attributes["friendly_name"] == "Synchronize Test server"
+    calls = discord["members"].await_count
+    await hass.services.async_call("button", "press", {"entity_id": button}, blocking=True)
+    await hass.async_block_till_done()
+    assert discord["members"].await_count == calls + 1
+    assert state(hass, "presence") == "idle"
+    assert state(hass, "in_voice_channel", "binary_sensor") == "off"
+    assert state(hass, "voice_channel") == "unknown"
+    # A missing gateway member is unknown, never inferred offline or disconnected.
+    assert state(hass, "presence", member="2") == "unknown"
+    assert state(hass, "in_voice_channel", "binary_sensor", "2") == "unknown"
+
+
+async def test_gateway_failure_preserves_devices_and_button(hass, entry, discord, gateway):
+    await setup(hass, entry)
+    discord["members"].return_value = {}
+    gateway["snapshot"].side_effect = DiscordError("Gateway unavailable")
+    button = er.async_get(hass).async_get_entity_id("button", DOMAIN, "100_sync")
+    with pytest.raises(HomeAssistantError):
+        await hass.services.async_call("button", "press", {"entity_id": button}, blocking=True)
+    await hass.async_block_till_done()
+    assert len(dr.async_entries_for_config_entry(dr.async_get(hass), entry.entry_id)) == 2
+    assert state(hass, "presence") == "unavailable"
+    assert hass.states.get(button).state != "unavailable"
+
+
+async def test_all_member_entities_removed_but_button_survives(hass, entry, discord):
+    await setup(hass, entry)
+    discord["members"].return_value = {}
+    await entry.runtime_data.async_refresh()
+    await hass.async_block_till_done()
+    entities = er.async_entries_for_config_entry(er.async_get(hass), entry.entry_id)
+    assert [entity.unique_id for entity in entities] == ["100_sync"]
+
+
+async def test_unload_and_initial_failure_close_gateway(hass, entry, discord, gateway):
+    await setup(hass, entry)
+    assert await hass.config_entries.async_unload(entry.entry_id)
+    gateway["close"].assert_awaited_once()
+    gateway["close"].reset_mock()
+    gateway["snapshot"].side_effect = DiscordError("Gateway unavailable")
+    assert not await hass.config_entries.async_setup(entry.entry_id)
+    gateway["close"].assert_awaited_once()

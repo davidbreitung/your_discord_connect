@@ -6,7 +6,9 @@
   Konfigurationsverzeichnis, häufig `/config`.
 - Discord-Konto mit **Server verwalten** beziehungsweise Berechtigung zum Einladen
   eines Bots auf den Zielserver.
-- Ausgehender HTTPS-Zugriff auf `discord.com`, Port 443. Keine eingehenden Ports,
+- Ausgehender HTTPS-Zugriff auf `discord.com` und WSS-Zugriff auf
+  `gateway.discord.gg` sowie die von Discord gelieferten Gateway-/Resume-Adressen
+  (gegebenenfalls `*.discord.gg`), jeweils Port 443. Keine eingehenden Ports,
   Webhooks oder öffentliche Home-Assistant-Adresse erforderlich.
 
 ## 1. Integration installieren
@@ -39,10 +41,9 @@ sind noch nicht über HACS verfügbar; die reale HACS-Installation ist separat z
 2. Über **New Application** eine Anwendung erstellen, z. B. „Home Assistant“.
 3. Unter **Bot** den zugehörigen Bot öffnen beziehungsweise anlegen, falls Discord
    ihn nicht automatisch erstellt hat.
-4. Unter **Privileged Gateway Intents** den **Server Members Intent** aktivieren
-   und speichern. Dieser ist auch für die REST-Mitgliederliste erforderlich,
-   obwohl keine Gateway-Verbindung verwendet wird.
-5. **Presence Intent** und **Message Content Intent** werden nicht benötigt.
+4. Unter **Privileged Gateway Intents** den **Server Members Intent** und
+   **Presence Intent** aktivieren und speichern. Beide werden benötigt.
+5. **Message Content Intent** wird nicht benötigt.
 6. Unter **Bot → Reset Token** ein Bot-Token erzeugen und sicher aufbewahren.
    Dieses später direkt in Home Assistant eingeben. Application ID, Public Key,
    OAuth Client Secret und persönliche Benutzer-Tokens sind nicht geeignet.
@@ -53,15 +54,16 @@ von Discord erfordern. Die Integration umgeht diese Vorgaben nicht.
 ## 3. Bot einladen
 
 1. Unter **OAuth2 → URL Generator** den Scope **bot** auswählen.
-2. Keine zusätzlichen Bot-Berechtigungen auswählen; insbesondere keine
-   **Administratorrechte** vergeben. Die Mitgliederliste benötigt nur den Members
-   Intent und die Servermitgliedschaft, keine Nachrichten- oder Moderationsrechte.
+2. **View Channels / Kanäle ansehen** für die gewünschten Sprachkanäle erlauben
+   (auch kanalbezogene Überschreibungen prüfen). Keine **Administratorrechte**,
+   Nachrichten- oder Moderationsrechte vergeben. **Connect** und **Speak** sind
+   nicht nötig; der Bot nimmt nicht an Sprachgesprächen teil.
 3. Den erzeugten Link öffnen, Zielserver auswählen und zustimmen. Der Bot muss
    auf dem Server installiert werden, nicht nur für einen Benutzer.
 4. Prüfen, dass der Bot in der Discord-Mitgliederliste erscheint.
 
-Der Bot kann als **offline** erscheinen. Das ist normal: Die Integration verwendet
-HTTPS-Abfragen, keine dauerhafte Gateway-Verbindung mit Online-Status.
+Ab Version 0.2.0 hält die Integration eine Gateway-Verbindung. Der Bot kann dadurch
+als online erscheinen. Sein Online-Status allein belegt keinen erfolgreichen Abgleich.
 
 ## 4. Home Assistant verbinden
 
@@ -69,12 +71,16 @@ HTTPS-Abfragen, keine dauerhafte Gateway-Verbindung mit Online-Status.
 2. **Your Discord Connect** suchen und Bot-Token eingeben.
 3. Server aus der automatisch geladenen Liste wählen. Bei gleichnamigen Servern
    hilft die zusätzlich angezeigte Server-ID.
-4. Der gesamte Mitgliederzugriff wird geprüft. Nur bei Erfolg entsteht der Eintrag.
-5. Die Mitglieder erscheinen als Geräte mit jeweils einem **Anzeigename**-Sensor.
+4. Der REST-Mitgliederzugriff wird geprüft. Beim Laden des Eintrags wird zusätzlich
+   die Gateway-Verbindung aufgebaut. Fehlende Intents dort aktivieren und den
+   Integrationseintrag anschließend neu laden.
+5. Jedes Gerät erhält Anzeigename, Benutzername, Presence-Status, einen Binärsensor
+   für Sprachkanalverbindung und den Sprachkanalnamen.
    Auch der Bot selbst zählt als Mitglied.
 
 Große Server werden in Seiten mit bis zu 1000 Mitgliedern geladen; der erste und
-weitere Abgleiche können entsprechend länger dauern.
+weitere Abgleiche können entsprechend länger dauern. Presence-Abfragen erfolgen
+in Gruppen von höchstens 100 Benutzer-IDs über das Gateway.
 
 ## 5. Intervall ändern
 
@@ -83,6 +89,18 @@ Am Integrationseintrag **Konfigurieren** wählen und eine ganze Zahl zwischen
 Eintrag neu und synchronisiert sofort. Für große Server und mehrere Einträge
 ein ausreichend langes Intervall wählen, um Ratenbegrenzungen zu vermeiden.
 
+## 6. Manuell synchronisieren
+
+Unter dem Integrationseintrag den Knopf **<Servername> synchronisieren** drücken.
+Er aktualisiert Mitglieder, Namen, Presence und Sprachkanalbelegung gemeinsam.
+Alternativ `button.press` mit dieser Entität in einer Automation verwenden. Schnelle
+Mehrfachaufrufe werden durch Home Assistants Coordinator zusammengefasst.
+
+Discord unterscheidet für Bots unsichtbare Benutzer nicht von Offline-Benutzern.
+Ohne Sprachkanal zeigt der Binärsensor aus und der Kanalsensor unbekannt. Bei einem
+fehlenden Gateway-Mitglied sind Presence und Sprachdaten unbekannt. Bei einem
+Verbindungsfehler werden Mitgliederentitäten nicht verfügbar; keine Geräte werden gelöscht.
+
 ## Fehlerbehebung
 
 | Verhalten | Abhilfe |
@@ -90,13 +108,21 @@ ein ausreichend langes Intervall wählen, um Ratenbegrenzungen zu vermeiden.
 | Integration fehlt | Ordnerstruktur und HA-Version prüfen, vollständig neu starten und Protokoll auf Ladefehler prüfen. |
 | Ungültiges Token | Bot-Token verwenden; nach Reset ist das bisherige Token ungültig. Neues Token in der erneuten Anmeldung eingeben. |
 | Keine Server | Bot mit Scope `bot` einladen, dann Token-Formular erneut absenden. Token und eingeladener Bot müssen zur selben Anwendung gehören. |
-| Zugriff verweigert | Members Intent aktivieren und speichern, Bot-Mitgliedschaft und gegebenenfalls Discord-Genehmigung prüfen. |
+| Zugriff verweigert | Members Intent und Presence Intent aktivieren und speichern; anschließend Integration neu laden, Bot-Mitgliedschaft und gegebenenfalls Discord-Genehmigung prüfen. |
 | Server nicht erreichbar | Prüfen, ob Bot entfernt wurde; wieder einladen oder nicht benötigten Integrationseintrag entfernen. |
-| Verbindung fehlgeschlagen | DNS, Internet und HTTPS-Zugriff auf `discord.com` prüfen; Discord könnte vorübergehend ausgefallen sein. |
+| Verbindung fehlgeschlagen | DNS, Internet und HTTPS-Zugriff auf `discord.com` und WSS auf Discord-Gateway-Adressen prüfen; Discord könnte vorübergehend ausgefallen sein. |
 | Ratenbegrenzung | Warten; im Betrieb wird beim nächsten Intervall erneut versucht. Bei Bedarf Intervall erhöhen. |
 | Sensoren nicht verfügbar | Letzter Abgleich fehlgeschlagen. Geräte bleiben erhalten. Eventuelle Aufforderung zur erneuten Anmeldung abschließen. |
 | Mitglied fehlt noch | Nächstes Intervall abwarten oder Integrationseintrag neu laden. Kein Echtzeitabgleich. |
 | Alter Gerätename | Eigene HA-Gerätenamen bleiben erhalten. Der Anzeigenamen-Sensor enthält den aktuellen Discord-Namen. |
+
+## Update von 0.1.0 auf 0.2.0
+
+Vor dem Update **Presence Intent** im Developer Portal aktivieren und die Sichtbarkeit
+relevanter Sprachkanäle für den Bot prüfen. Danach aktualisieren und Home Assistant
+neu starten. Geräte und Anzeigenamen-Sensoren behalten ihre IDs; weitere Entitäten
+und der Synchronisationsknopf werden automatisch hinzugefügt. Den Servereintrag
+nicht löschen und neu anlegen.
 
 ## Aktualisieren und entfernen
 

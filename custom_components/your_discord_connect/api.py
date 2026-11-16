@@ -1,4 +1,4 @@
-"""Small read-only Discord REST client; no gateway connection is required."""
+"""Read-only Discord REST client for server discovery and member identities."""
 
 from dataclasses import dataclass
 from time import monotonic
@@ -34,6 +34,10 @@ class Member:
 
     id: str
     display_name: str
+    username: str = ""
+    presence: str | None = None
+    in_voice_channel: bool | None = None
+    voice_channel: str | None = None
 
 
 class DiscordClient:
@@ -53,7 +57,7 @@ class DiscordClient:
                 headers={
                     "Authorization": f"Bot {self._token}",
                     "User-Agent": (
-                        "DiscordBot (https://github.com/davidbreitung/your_discord_connect, 0.1.0)"
+                        "DiscordBot (https://github.com/davidbreitung/your_discord_connect, 0.2.0)"
                     ),
                 },
                 params=params,
@@ -125,7 +129,10 @@ class DiscordClient:
                     name = item.get("nick") or user.get("global_name") or user["username"]
                     if not member_id.isdigit() or not isinstance(name, str) or not name:
                         raise ValueError("Invalid member")
-                    members[member_id] = Member(member_id, name)
+                    username = user["username"]
+                    if not isinstance(username, str) or not username:
+                        raise ValueError("Invalid username")
+                    members[member_id] = Member(member_id, name, username)
                 if len(page) < 1000:
                     return members
                 next_after = str(page[-1]["user"]["id"])

@@ -42,7 +42,31 @@ def discord():
         patch(
             "custom_components.your_discord_connect.api.DiscordClient.members",
             new_callable=AsyncMock,
-            return_value={"1": Member("1", "Alice"), "2": Member("2", "Bob")},
+            return_value={
+                "1": Member("1", "Alice", "alice.real"),
+                "2": Member("2", "Bob", "bob.real"),
+            },
         ) as members,
     ):
         yield {"guilds": guilds, "guild_name": guild_name, "members": members}
+
+
+@pytest.fixture
+def gateway():
+    from custom_components.your_discord_connect.gateway import MemberState
+
+    with (
+        patch(
+            "custom_components.your_discord_connect.gateway.DiscordGateway.snapshot",
+            new_callable=AsyncMock,
+            return_value={
+                "1": MemberState("online", True, "General"),
+                "2": MemberState("offline", False, None),
+            },
+        ) as snapshot,
+        patch(
+            "custom_components.your_discord_connect.gateway.DiscordGateway.async_close",
+            new_callable=AsyncMock,
+        ) as close,
+    ):
+        yield {"snapshot": snapshot, "close": close}
