@@ -1,4 +1,4 @@
-/* Your Discord Connect 1.0.0 — no external libraries or bot credentials. */
+/* Your Discord Connect 1.0.1 — no external libraries or bot credentials. */
 const DOMAIN = "your_discord_connect";
 const CSS = `
 :host{display:block;color:#dbdee1;font-family:var(--primary-font-family,system-ui,sans-serif)}
@@ -153,6 +153,21 @@ class DiscordChannelOverview extends DiscordCard {
   }
 }
 class DiscordTextChannelFeed extends DiscordCard {
+  _stop() {
+    cancelAnimationFrame(this._scrollFrame);
+    super._stop();
+  }
+  _scrollToLatest(body) {
+    cancelAnimationFrame(this._scrollFrame);
+    const scroll = () => {
+      if (this.isConnected && this.shadowRoot.querySelector(".body") === body) {
+        body.scrollTop = body.scrollHeight;
+      }
+    };
+    scroll();
+    // HA layout and image loading may change the height after DOM replacement.
+    this._scrollFrame = requestAnimationFrame(scroll);
+  }
   static getConfigElement() { return document.createElement("discord-text-channel-feed-editor"); }
   static getStubConfig() { return {type:"custom:discord-text-channel-feed", title:"Discord-Text-Channel-Feed", entry_id:"", channel_id:""}; }
   async _start() {
@@ -171,9 +186,6 @@ class DiscordTextChannelFeed extends DiscordCard {
     }
   }
   _render() {
-    const previous = this.shadowRoot.querySelector(".body");
-    const bottom = !previous || previous.scrollHeight - previous.scrollTop - previous.clientHeight < 70;
-    const scroll = previous?.scrollTop || 0;
     const card = this._shell(this._config?.title || "Discord-Text-Channel-Feed", "pound", this._data ? `# ${this._data.channel}` : "");
     if (!this._config?.channel_id) { card.append(node("div", "Bitte einen Textkanal auswählen.", "notice")); return; }
     if (!this._data || this._error) {
@@ -207,7 +219,8 @@ class DiscordTextChannelFeed extends DiscordCard {
     }
     if (!this._data.messages.length) body.append(node("div", "Noch keine Nachrichten in diesem Kanal.", "notice"));
     card.append(body, node("div", `Letzte 50 Nachrichten · Aktualisierung alle ${this._config.refresh_interval || 15} Sekunden · Nur lesen`, "footer"));
-    body.scrollTop = bottom ? body.scrollHeight : scroll;
+    body.addEventListener("load", () => this._scrollToLatest(body), true);
+    this._scrollToLatest(body);
   }
 }
 class DiscordCardEditor extends HTMLElement {

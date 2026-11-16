@@ -1,5 +1,9 @@
 # Änderungen
 
+## 1.0.1
+
+- Text-Channel-Feed scrollt nach jeder Aktualisierung und nach dem Laden von Bildern zuverlässig zu den neuesten Nachrichten.
+
 ## 1.0.0
 
 - Discord-Channel-Overview mit Kategorie-/Kanalhierarchie, Avataren, Presence und Mute-Anzeigen; Live-Daten über authentifizierte WebSockets.

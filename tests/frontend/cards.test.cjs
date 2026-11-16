@@ -93,3 +93,35 @@ test('failed feed request removes stale content', async () => {
   assert.match(await page.locator('discord-text-channel-feed .error').textContent(),/Access denied/);
   await page.close();
 });
+test('feed always scrolls to newest messages after refresh and delayed image loading', async () => {
+  const page = await setup();
+  const atBottom = () => page.evaluate(() => {
+    const body = feedCard.shadowRoot.querySelector('.body');
+    return body.scrollHeight > body.clientHeight && Math.abs(body.scrollHeight - body.clientHeight - body.scrollTop) <= 1;
+  });
+  await page.evaluate(async () => {
+    feed.messages = Array.from({length:50}, (_, i) => ({...feed.messages[0],id:String(i),content:`Message ${i}`}));
+    await feedCard._start();
+  });
+  await page.waitForFunction(() => {
+    const body = feedCard.shadowRoot.querySelector('.body');
+    return body.scrollTop > 0;
+  });
+  assert.ok(await atBottom());
+  await page.evaluate(async () => {
+    feedCard.shadowRoot.querySelector('.body').scrollTop = 0;
+    feed.messages.push({...feed.messages[0],id:'new',content:'Newest message'});
+    await feedCard._start();
+  });
+  assert.ok(await atBottom());
+  // Simulate an attachment gaining its natural height after the render frame.
+  await page.evaluate(() => {
+    const body = feedCard.shadowRoot.querySelector('.body');
+    const image = document.createElement('img');
+    image.style.cssText = 'display:block;height:400px;width:100px';
+    body.append(image);
+    image.dispatchEvent(new Event('load'));
+  });
+  assert.ok(await atBottom());
+  await page.close();
+});

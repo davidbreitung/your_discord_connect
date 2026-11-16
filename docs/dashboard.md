@@ -1,4 +1,4 @@
-# Dashboard-Karten und private Nachrichten (1.0.0)
+# Dashboard-Karten und private Nachrichten (1.0.1)
 
 Die Integration enthält zwei eigene Lovelace-Karten. Es ist kein weiteres
 HACS-Frontend-Repository nötig. Beide Karten verwenden die bestehende Integration;
@@ -10,7 +10,7 @@ Bot-Token gehören niemals in die Kartenkonfiguration.
    und Home Assistant neu starten.
 2. Im Benutzerprofil **Erweiterter Modus** aktivieren.
 3. Unter **Einstellungen → Dashboards → ⋮ → Ressourcen** eine Ressource hinzufügen:
-   - URL: `/your_discord_connect/discord-cards.js?v=1.0.0`
+   - URL: `/your_discord_connect/discord-cards.js?v=1.0.1`
    - Typ: **JavaScript-Modul**
 4. Dashboard im Browser neu laden. Bei Updates die Versionsangabe in dieser URL
    ändern, falls der Browser noch die alte Datei verwendet.
@@ -25,7 +25,7 @@ Bei YAML-Dashboards die Ressource stattdessen in der bestehenden
 ```yaml
 lovelace:
   resources:
-    - url: /your_discord_connect/discord-cards.js?v=1.0.0
+    - url: /your_discord_connect/discord-cards.js?v=1.0.1
       type: module
 ```
 
@@ -96,7 +96,9 @@ Bearbeitungsmarkierung, Bildern/Anhangslinks und einfachen Embeds. Sie aktualisi
 sich standardmäßig alle **15 Sekunden** (einstellbar bis 300). Bearbeitungen und
 Löschungen erscheinen beim nächsten erfolgreichen Abruf. Gleichzeitige Karten
 teilen einen 15-Sekunden-Cache pro Kanal; maximal acht Kanäle bleiben im Cache.
-Geschlossene Karten beenden ihre Aktualisierung.
+Nach jedem Abruf scrollt die Karte automatisch ganz nach unten zu den neuesten
+Nachrichten, auch wenn zuvor nach oben gescrollt wurde. Nachgeladene Bilder werden
+berücksichtigt. Geschlossene Karten beenden ihre Aktualisierung.
 
 Der Feed ist **nur lesend**. Er unterstützt einfache Fettschrift, Kursivschrift,
 Inline-Code und HTTPS-Links. Benutzertext wird nicht als HTML ausgeführt. Discords

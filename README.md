@@ -4,7 +4,7 @@ Eine eigenständige **Custom Integration für Home Assistant**, die Mitglieder e
 Discord-Servers als virtuelle Geräte abbildet. Kein separater Bot-Prozess und kein
 Home-Assistant-Add-on erforderlich.
 
-**Stand: 1.0.0.** Unterstützte Testbasis: Home Assistant
+**Stand: 1.0.1.** Unterstützte Testbasis: Home Assistant
 **2026.10.4** mit Python **3.14.2 oder neuer**. Ältere Home-Assistant-Versionen sind
 derzeit nicht unterstützt. Automatisierte Tests simulieren Discord-Antworten;
 ein Test mit einem echten Discord-Server steht noch aus.
