@@ -39,8 +39,11 @@ Automationen gegebenenfalls anpassen. Die übrigen Mitgliedergeräte behalten ih
    HTTPS-Proxy-Freigabe genügt nicht. Bei Verbindungsproblemen Firewall/Container-Netz
    prüfen. Es wird kein eingehender Port zur Home-Assistant-Oberfläche benötigt.
 
-Die Integration installiert `discord.py[voice]==2.7.1` mit der Voice-Unterstützung
-einschließlich PyNaCl und DAVE. Discord-Verbindung und Audioübertragung bleiben
+Die Integration installiert `discord.py==2.7.1`, `PyNaCl==1.6.2` und
+`davey==0.2.0` ausdrücklich als getrennte Abhängigkeiten. Das Voice-Extra von
+discord.py verlangt PyNaCl < 1.6 und kollidiert damit mit Home Assistants
+Vorgabe PyNaCl 1.6.2. Die getrennte Deklaration erhält die Voice-Unterstützung
+einschließlich DAVE; Home Assistants Paketvorgaben bleiben wirksam. Discord-Verbindung und Audioübertragung bleiben
 verschlüsselt; die Verschlüsselung wird nicht deaktiviert.
 
 Fehlender TTS-Anbieter oder fehlendes FFmpeg blockiert nicht die normale Mitglieder-

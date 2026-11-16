@@ -46,7 +46,7 @@ class DiscordCoordinator(DataUpdateCoordinator[dict[str, Member]]):
         self.guild_id = entry.data[CONF_GUILD_ID]
         self.client = DiscordClient(async_get_clientsession(hass), entry.data[CONF_TOKEN])
         self.gateway = DiscordGateway(hass, entry.data[CONF_TOKEN], self.guild_id)
-        self.voice = BotVoice(hass, self.gateway)
+        self.voice = BotVoice(hass, self.gateway, self.guild_id)
         self.entry_id = entry.entry_id
         self.activity = ActivityTracker(hass, self.guild_id)
         self._syncing = False
@@ -123,6 +123,7 @@ class DiscordCoordinator(DataUpdateCoordinator[dict[str, Member]]):
         keys = (*MEMBER_SENSOR_KEYS, *MEMBER_BINARY_KEYS)
         valid_entities = {f"{identifier}_{key}" for identifier in valid_ids for key in keys}
         valid_entities.update(f"{self.guild_id}_{key}" for key in CENTRAL_KEYS)
+        valid_entities.add(f"{self.guild_id}_playback_status")
         valid_ids.add(f"{self.guild_id}_central")
         valid_ids.add(f"{self.guild_id}_bot")
         for entity in er.async_entries_for_config_entry(entities, self.entry_id):

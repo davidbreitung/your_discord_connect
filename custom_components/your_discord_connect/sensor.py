@@ -5,16 +5,19 @@ from datetime import datetime
 from homeassistant.components.sensor import SensorDeviceClass, SensorEntity
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
+from .bot_entity import BotEntity
 from .const import MEMBER_SENSOR_KEYS
 from .entity import DiscordMemberEntity, add_member_entities
 from .groups import CENTRAL_KEYS, central_device_info
+from .voice import PLAYBACK_STATES
 
 KEYS = MEMBER_SENSOR_KEYS
 
 
 async def async_setup_entry(hass, entry, async_add_entities):
     async_add_entities(
-        [DiscordCountSensor(entry.runtime_data, key) for key in CENTRAL_KEYS],
+        [DiscordCountSensor(entry.runtime_data, key) for key in CENTRAL_KEYS]
+        + [BotPlaybackSensor(entry.runtime_data, "playback_status")],
         config_subentry_id=entry.runtime_data.groups["central"],
     )
     add_member_entities(
@@ -41,6 +44,20 @@ class DiscordMemberSensor(DiscordMemberEntity, SensorEntity):
     def native_value(self) -> str | datetime | None:
         member = self.coordinator.data.get(self.member_id)
         return getattr(member, self.key) if member else None
+
+
+class BotPlaybackSensor(BotEntity, SensorEntity):
+    _attr_device_class = SensorDeviceClass.ENUM
+    _attr_options = list(PLAYBACK_STATES)
+    _attr_icon = "mdi:play-circle-outline"
+
+    @property
+    def native_value(self):
+        return self.coordinator.voice.playback_state
+
+    @property
+    def extra_state_attributes(self):
+        return {"queued_announcements": self.coordinator.voice.queued_announcements}
 
 
 class DiscordCountSensor(CoordinatorEntity, SensorEntity):

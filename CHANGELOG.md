@@ -1,5 +1,11 @@
 # Änderungen
 
+## Unveröffentlicht – Installationskorrektur
+
+- Konflikt zwischen Discords Voice-Extra und Home Assistants PyNaCl 1.6.2 behoben: Discord, PyNaCl und DAVE separat deklariert.
+- Paketauflösung gegen Home-Assistant-Installationsvorgaben in CI ergänzt; Vorgaben von 2026.10.4 und 2026.11.1 geprüft.
+- Regressionstest für Discord-Voice-Paketverschlüsselung und Hinweise zur Fehlerbehebung ergänzt.
+
 ## 0.4.0
 
 - Eigenes Bot-Gerät in zentraler Konfiguration; eindeutige eigene Bot-ID aus Benutzergeräten ausgeblendet.

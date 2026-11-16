@@ -9,6 +9,7 @@ from .const import CONF_GUILD_ID
 from .coordinator import DiscordCoordinator
 from .groups import setup_groups
 from .services import async_register_services
+from .voice import volume_store
 
 type DiscordConfigEntry = ConfigEntry[DiscordCoordinator]
 PLATFORMS = [
@@ -17,6 +18,7 @@ PLATFORMS = [
     Platform.BUTTON,
     Platform.SELECT,
     Platform.TEXT,
+    Platform.NUMBER,
 ]
 
 
@@ -28,6 +30,7 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
 async def async_setup_entry(hass: HomeAssistant, entry: DiscordConfigEntry) -> bool:
     coordinator = DiscordCoordinator(hass, entry)
     try:
+        await coordinator.voice.async_load()
         await coordinator.async_config_entry_first_refresh()
         entry.runtime_data = coordinator
         setup_groups(hass, entry, coordinator)
@@ -57,3 +60,4 @@ async def async_unload_entry(hass: HomeAssistant, entry: DiscordConfigEntry) -> 
 
 async def async_remove_entry(hass: HomeAssistant, entry: DiscordConfigEntry) -> None:
     await ActivityTracker(hass, entry.data[CONF_GUILD_ID]).store.async_remove()
+    await volume_store(hass, entry.data[CONF_GUILD_ID]).async_remove()

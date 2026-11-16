@@ -160,3 +160,19 @@ Zum Entfernen zuerst den Servereintrag in **Geräte & Dienste** löschen. Home
 Assistant entfernt die zugehörigen Geräte und Entitäten. Danach gegebenenfalls
 Integration über HACS entfernen oder Ordner löschen und neu starten. Einen nicht
 mehr benötigten Bot optional aus Discord entfernen und dessen Token zurücksetzen.
+
+### Startfehler: `Requirements ... not found`
+
+Bei der bisherigen Anforderung `discord.py[voice]==2.7.1` besteht ein
+Versionskonflikt: Das Voice-Extra fordert PyNaCl < 1.6, Home Assistant
+2026.10.4 und 2026.11.1 schreiben jedoch PyNaCl 1.6.2 vor. Die korrigierte
+`manifest.json` deklariert Discord, PyNaCl und DAVE getrennt.
+
+Die korrigierten Integrationsdateien installieren und Home Assistant vollständig
+neu starten. Der vorhandene Integrationseintrag und das Bot-Token können bleiben.
+Keine Home-Assistant-Systempakete manuell herabstufen oder Paketvorgaben entfernen.
+
+Falls die Installation weiterhin fehlschlägt, in **Einstellungen → System →
+Protokolle** den vorherigen Eintrag von `homeassistant.util.package` mit
+`Unable to install package` prüfen. Er enthält den konkreten Paket-, Download-
+oder Plattformfehler; die Meldung von `homeassistant.setup` allein genügt nicht.

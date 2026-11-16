@@ -65,7 +65,7 @@ def voice_env(hass):
         on_bot_update=None,
         channels=[*guild.voice_channels, *guild.stage_channels],
     )
-    controller = BotVoice(hass, fake_gateway)
+    controller = BotVoice(hass, fake_gateway, "100")
     return SimpleNamespace(
         controller=controller,
         gateway=fake_gateway,
@@ -215,11 +215,13 @@ async def test_native_ffmpeg_produces_opus_packets(hass, audio_format):
             ).stdout
         source = make_audio_source(audio, "ffmpeg")
         try:
+            encoder = discord.opus.Encoder()
             packets = []
-            while packet := source.read():
-                packets.append(packet)
-            assert source.is_opus()
+            while pcm := source.read():
+                packets.append(encoder.encode(pcm, 960))
+            assert not source.is_opus()
             assert len(packets) >= 5
+            assert all(packets)
         finally:
             source.cleanup()
 

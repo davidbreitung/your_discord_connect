@@ -7,6 +7,7 @@ Python **3.14.2+** und [uv](https://docs.astral.sh/uv/) verwenden:
 ```sh
 cd your_discord_connect
 uv sync --frozen
+uv run python scripts/check_requirements.py
 uv run pytest
 uv run ruff check .
 uv run ruff format --check .
@@ -16,7 +17,8 @@ Die Tests nutzen echtes Home Assistant **2026.10.4**, festgelegt durch
 `pytest-homeassistant-custom-component==0.13.375`. `uv.lock` fixiert die
 Entwicklungsabhängigkeiten. Discord-Antworten werden simuliert; Tokens, eine
 externe Datenbank oder ein echter Server sind für die Tests nicht nötig.
-REST nutzt Home Assistants `aiohttp`; das Gateway verwendet `discord.py[voice]==2.7.1`.
+REST nutzt Home Assistants `aiohttp`; das Gateway verwendet `discord.py==2.7.1` mit explizitem
+`PyNaCl==1.6.2` und `davey==0.2.0`.
 Die Bibliothek übernimmt Heartbeats, Reconnect, Session Resume und DAVE für Voice.
 Für den nativen Audiotest FFmpeg mit Opus-Encoder installieren (unter Debian/Ubuntu
 `sudo apt-get install ffmpeg`). CI installiert FFmpeg ausdrücklich.
@@ -181,3 +183,17 @@ Die öffentliche Versand-Schnittstelle und Beispiele für andere Integrationen s
 in [api.md](api.md). Versandtests simulieren alle HTTP-Aufrufe; keine echten DMs
 werden in Tests verschickt. Die reale DM-Abnahme mit einem eigenen Testempfänger
 steht noch aus.
+
+## Installationsabhängigkeiten prüfen
+
+`python scripts/check_requirements.py` löst die Manifest-Abhängigkeiten mit
+Home Assistants `package_constraints.txt` auf, wie es auch der HA-Installer tut.
+CI führt diese Prüfung zusätzlich zu den Funktionstests aus. Ein optionaler
+Dateipfad als Argument erlaubt die Prüfung gegen die Vorgaben einer weiteren
+HA-Version. Die korrigierte Paketkombination wurde gegen 2026.10.4 und 2026.11.1
+aufgelöst. Die Funktionstests laufen weiterhin auf 2026.10.4.
+
+Das Discord-Voice-Extra setzt eine mit HA unvereinbare PyNaCl-Obergrenze. Deshalb
+werden die benötigten Voice-Pakete separat deklariert und die tatsächlich von
+discord.py genutzte AEAD-Verschlüsselung mit dieser Kombination getestet.
+Die Entwicklungsumgebung verwendet außerdem HA-kompatibles CFFI 2.0.0.

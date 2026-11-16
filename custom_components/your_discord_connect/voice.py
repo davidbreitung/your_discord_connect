@@ -1,18 +1,27 @@
 """Bot channel control and bounded TTS playback through Home Assistant."""
 
 import asyncio
+import ctypes.util
 import io
+import math
 import os
 from functools import partial
 
 import discord
 from homeassistant.exceptions import HomeAssistantError
+from homeassistant.helpers.storage import Store
 
 from .const import DOMAIN
 
 LEAVE_ALL = "alle verlassen"
 MAX_TEXT_LENGTH = 255
 MAX_QUEUE = 5
+DEFAULT_VOLUME = 50
+PLAYBACK_STATES = ("disconnected", "idle", "preparing", "playing", "error")
+
+
+def volume_store(hass, guild_id):
+    return Store(hass, 1, f"{DOMAIN}.{guild_id}.voice")
 
 
 def voice_error(key):
@@ -21,26 +30,35 @@ def voice_error(key):
 
 def make_audio_source(audio: bytes, executable: str):
     """Decode only generated audio from stdin; no arbitrary media URLs or shell."""
+    # Loading libopus can block; this helper is called in HA's executor.
+    if not discord.opus.is_loaded():
+        library = ctypes.util.find_library("opus")
+        if not library:
+            raise voice_error("tts_opus_unavailable")
+        discord.opus.load_opus(library)
     # discord.py expects a file object for stderr, not subprocess.DEVNULL.
     # Newer FFmpeg builds resolve '-' to fd rather than pipe; both are local only.
     with open(os.devnull, "wb") as stderr:
-        source = discord.FFmpegOpusAudio(
+        source = discord.FFmpegPCMAudio(
             io.BytesIO(audio),
             executable=executable,
             pipe=True,
-            bitrate=64,
             before_options="-nostdin -protocol_whitelist pipe,fd",
             options="-vn",
             stderr=stderr,
         )
-    return source
+    return discord.PCMVolumeTransformer(source, volume=DEFAULT_VOLUME / 100)
 
 
 class BotVoice:
-    def __init__(self, hass, gateway):
+    def __init__(self, hass, gateway, guild_id):
         self.hass = hass
         self.gateway = gateway
         self.text = ""
+        self.volume = DEFAULT_VOLUME
+        self._volume_store = volume_store(hass, guild_id)
+        self._phase = "idle"
+        self._active_source = None
         self._listeners = set()
         self._connection_lock = asyncio.Lock()
         self._speech_lock = asyncio.Lock()
@@ -48,6 +66,49 @@ class BotVoice:
         self._closing = False
         self._observed_channel = None
         gateway.on_bot_update = self.notify
+
+    async def async_load(self):
+        saved = await self._volume_store.async_load() or {}
+        value = saved.get("volume", DEFAULT_VOLUME)
+        if self._valid_volume(value):
+            self.volume = int(value)
+
+    @staticmethod
+    def _valid_volume(value):
+        return (
+            isinstance(value, (int, float))
+            and not isinstance(value, bool)
+            and math.isfinite(value)
+            and 0 <= value <= 100
+            and int(value) == value
+        )
+
+    async def async_set_volume(self, value):
+        if not self._valid_volume(value):
+            raise voice_error("voice_invalid_volume")
+        await self._volume_store.async_save({"volume": int(value)})
+        self.volume = int(value)
+        if self._active_source is not None:
+            self._active_source.volume = self.volume / 100
+        self._emit()
+
+    @property
+    def playback_state(self):
+        if not self.gateway.connected or self.current_channel_id is None:
+            return "disconnected"
+        return self._phase
+
+    @property
+    def queued_announcements(self):
+        return max(0, len(self._jobs) - (self._phase in ("preparing", "playing")))
+
+    def _set_phase(self, phase):
+        self._phase = phase
+        self._emit()
+
+    def _emit(self):
+        for listener in tuple(self._listeners):
+            listener()
 
     @property
     def voice_client(self):
@@ -82,14 +143,14 @@ class BotVoice:
     def notify(self):
         current = self.current_channel_id
         if current != self._observed_channel or not self.gateway.connected:
+            self._phase = "idle"
             for task in tuple(self._jobs):
                 if not task.cancelling():
                     task.cancel()
             if voice := self.voice_client:
                 voice.stop()
         self._observed_channel = current
-        for listener in tuple(self._listeners):
-            listener()
+        self._emit()
 
     async def _cancel_jobs(self):
         tasks = tuple(self._jobs)
@@ -139,8 +200,7 @@ class BotVoice:
         if not isinstance(text, str) or len(text) > MAX_TEXT_LENGTH:
             raise voice_error("tts_invalid_text")
         self.text = text
-        for listener in tuple(self._listeners):
-            listener()
+        self._emit()
 
     async def _render(self, text):
         if "tts" not in self.hass.config.components:
@@ -176,57 +236,74 @@ class BotVoice:
             self._speak(text, channel_id), "your_discord_connect TTS"
         )
         self._jobs.add(task)
+        self._emit()
         try:
             await task
         except asyncio.CancelledError as err:
             raise voice_error("tts_interrupted") from err
         finally:
             self._jobs.discard(task)
+            self._emit()
 
     async def _speak(self, text, channel_id):
         async with self._speech_lock:
-            self._validate_playback(channel_id)
-            audio, executable = await self._render(text)
-            self._validate_playback(channel_id)
-            # Subprocess creation is blocking and must not run on HA's event loop.
-            creation = self.hass.async_add_executor_job(
-                partial(make_audio_source, audio, executable)
-            )
+            self._set_phase("preparing")
             try:
-                source = await asyncio.shield(creation)
+                await self._play(text, channel_id)
             except asyncio.CancelledError:
-                source = await creation
-                await self.hass.async_add_executor_job(source.cleanup)
+                self._set_phase("idle")
                 raise
-            except (discord.DiscordException, OSError) as err:
-                raise voice_error("tts_ffmpeg_failed") from err
-            voice = self.voice_client
-            done = self.hass.loop.create_future()
+            except Exception:
+                self._set_phase("error")
+                raise
+            else:
+                self._set_phase("idle")
 
-            def finish(error):
-                if not done.done():
-                    if error:
-                        done.set_exception(voice_error("tts_playback_failed"))
-                    else:
-                        done.set_result(None)
+    async def _play(self, text, channel_id):
+        self._validate_playback(channel_id)
+        audio, executable = await self._render(text)
+        self._validate_playback(channel_id)
+        # Subprocess creation is blocking and must not run on HA's event loop.
+        creation = self.hass.async_add_executor_job(partial(make_audio_source, audio, executable))
+        try:
+            source = await asyncio.shield(creation)
+        except asyncio.CancelledError:
+            source = await creation
+            await self.hass.async_add_executor_job(source.cleanup)
+            raise
+        except (discord.DiscordException, OSError) as err:
+            raise voice_error("tts_ffmpeg_failed") from err
+        voice = self.voice_client
+        done = self.hass.loop.create_future()
 
-            def after(error):
-                self.hass.loop.call_soon_threadsafe(finish, error)
-
-            started = False
-            try:
-                self._validate_playback(channel_id)
-                voice.play(source, after=after)
-                started = True
-                async with asyncio.timeout(120):
-                    await done
-            except (discord.DiscordException, TimeoutError) as err:
-                raise voice_error("tts_playback_failed") from err
-            finally:
-                if started:
-                    voice.stop()  # discord.py's audio thread owns source cleanup.
+        def finish(error):
+            if not done.done():
+                if error:
+                    done.set_exception(voice_error("tts_playback_failed"))
                 else:
-                    await self.hass.async_add_executor_job(source.cleanup)
+                    done.set_result(None)
+
+        def after(error):
+            self.hass.loop.call_soon_threadsafe(finish, error)
+
+        started = False
+        try:
+            self._validate_playback(channel_id)
+            source.volume = self.volume / 100
+            self._active_source = source
+            voice.play(source, after=after)
+            started = True
+            self._set_phase("playing")
+            async with asyncio.timeout(120):
+                await done
+        except (discord.DiscordException, TimeoutError) as err:
+            raise voice_error("tts_playback_failed") from err
+        finally:
+            self._active_source = None
+            if started:
+                voice.stop()  # discord.py's audio thread owns source cleanup.
+            else:
+                await self.hass.async_add_executor_job(source.cleanup)
 
     def _validate_playback(self, channel_id):
         if self._closing or not self.gateway.connected or self.current_channel_id != channel_id:
