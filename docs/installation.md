@@ -56,8 +56,9 @@ von Discord erfordern. Die Integration umgeht diese Vorgaben nicht.
 1. Unter **OAuth2 → URL Generator** den Scope **bot** auswählen.
 2. **View Channels / Kanäle ansehen** für die gewünschten Sprachkanäle erlauben
    (auch kanalbezogene Überschreibungen prüfen). Keine **Administratorrechte**,
-   Nachrichten- oder Moderationsrechte vergeben. **Connect** und **Speak** sind
-   nicht nötig; der Bot nimmt nicht an Sprachgesprächen teil.
+   Nachrichten- oder Moderationsrechte vergeben. Für Bot-Kanalauswahl und TTS
+   zusätzlich **Connect / Verbinden** und **Speak / Sprechen** erlauben. Für die
+   reine Mitgliederanzeige werden diese beiden Rechte nicht benötigt.
 3. Den erzeugten Link öffnen, Zielserver auswählen und zustimmen. Der Bot muss
    auf dem Server installiert werden, nicht nur für einen Benutzer.
 4. Prüfen, dass der Bot in der Discord-Mitgliederliste erscheint.
@@ -118,7 +119,22 @@ Verbindungsfehler werden Mitgliederentitäten nicht verfügbar; keine Geräte we
 | Mitglied fehlt noch | Nächstes Intervall abwarten oder Integrationseintrag neu laden. Neue Mitglieder werden beim vollständigen Abgleich entdeckt; bestehende Statusentitäten aktualisieren sich sofort per Gateway. |
 | Alter Gerätename | Eigene HA-Gerätenamen bleiben erhalten. Der Anzeigenamen-Sensor enthält den aktuellen Discord-Namen. |
 
-## Update auf 0.3.0
+## Bot-Kanalauswahl und TTS ab 0.4.0
+
+Das Gerät **Bot: <Name>** wird automatisch in **zentrale Konfiguration** angelegt.
+Der eigene Bot wird bei eindeutiger ID aus **Benutzer** entfernt. Andere Bots und
+Serverzähler bleiben enthalten. Das Dropdown führt „alle verlassen“ zuerst auf;
+anschließend Sprach-/Stage-Kanäle mit IDs. Kanaländerungen werden per Gateway und
+bei jedem Vollabgleich synchronisiert.
+
+Für TTS einen HA-TTS-Anbieter konfigurieren, FFmpeg bereitstellen und dem Bot
+Verbinden/Sprechen erlauben. Discord-Voice benötigt ausgehendes UDP; die bisherige
+HTTPS/WSS-Freigabe alleine genügt nicht. Siehe [Voice-/TTS-Anleitung](voice.md).
+Nach dem Update Home Assistant neu starten. Es wird nicht automatisch einem Kanal
+beigetreten. Die bisherigen eigenen Bot-Mitgliederentitäten werden durch das neue
+Bot-Gerät ersetzt; darauf verweisende Automationen gegebenenfalls anpassen.
+
+## Update von älteren Versionen auf mindestens 0.3.0
 
 Integration aktualisieren und Home Assistant neu starten. Die Gruppen, das zentrale
 Gerät, Zähler und zusätzlichen Mitgliederentitäten werden automatisch angelegt.

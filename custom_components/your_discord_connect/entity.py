@@ -20,6 +20,7 @@ def add_member_entities(entry, async_add_entities, factory):
         if not coordinator.last_update_success:
             return
         current = set(coordinator.data)
+        current.discard(coordinator.bot_id)
         new = current - known
         known.intersection_update(current)
         known.update(new)

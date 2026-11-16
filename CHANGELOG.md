@@ -1,5 +1,15 @@
 # Änderungen
 
+## 0.4.0
+
+- Eigenes Bot-Gerät in zentraler Konfiguration; eindeutige eigene Bot-ID aus Benutzergeräten ausgeblendet.
+- Sprach-/Stage-Kanalauswahl mit erstem Eintrag „alle verlassen“, Beitritt und Kanalwechsel.
+- Kanalliste bei jedem Vollabgleich per API erneuert und zusätzlich durch Gateway-Ereignisse aktualisiert.
+- TTS-Textfeld und Ausführungsbutton mit Home Assistants Standard-TTS-Anbieter.
+- Begrenzte Durchsagewarteschlange; Abbruch bei Kanalwechsel, Disconnect oder Unload.
+- Discord-Voice mit DAVE-Unterstützung, FFmpeg-Opus-Verarbeitung und nativer Audioprüfung.
+- Voice-/TTS-Anleitung, Automationsbeispiele, Rechte- und Netzwerkhinweise ergänzt.
+
 ## 0.3.0
 
 - Gruppen „zentrale Konfiguration“ und „Benutzer“ mit zentralem Gerät und Geräteverknüpfung.

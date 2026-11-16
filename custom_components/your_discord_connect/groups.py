@@ -40,12 +40,28 @@ def setup_groups(hass, entry, coordinator):
         **central_device_info(coordinator.guild_id),
     )
     coordinator.central_device_id = central.id
+    bot = registry.async_get_or_create(
+        config_entry_id=entry.entry_id,
+        config_subentry_id=groups["central"],
+        **bot_device_info(coordinator),
+    )
     # Move existing member devices without replacing IDs, areas or custom names.
     for device in dr.async_entries_for_config_entry(registry, entry.entry_id):
-        if device.id != central.id:
+        if device.id not in (central.id, bot.id):
             registry.async_update_device(
                 device.id,
                 new_config_subentry_id=groups["users"],
                 model="Benutzer",
                 via_device_id=central.id,
             )
+
+
+def bot_device_info(coordinator) -> DeviceInfo:
+    return DeviceInfo(
+        identifiers={(DOMAIN, f"{coordinator.guild_id}_bot")},
+        name=f"Bot: {coordinator.gateway.bot_name}",
+        manufacturer="Discord",
+        model="Bot",
+        via_device_id=coordinator.central_device_id,
+        entry_type=dr.DeviceEntryType.SERVICE,
+    )

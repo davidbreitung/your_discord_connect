@@ -16,8 +16,10 @@ Die Tests nutzen echtes Home Assistant **2026.10.4**, festgelegt durch
 `pytest-homeassistant-custom-component==0.13.375`. `uv.lock` fixiert die
 Entwicklungsabhängigkeiten. Discord-Antworten werden simuliert; Tokens, eine
 externe Datenbank oder ein echter Server sind für die Tests nicht nötig.
-REST nutzt Home Assistants `aiohttp`; das Gateway verwendet `discord.py==2.6.4`.
-Die Bibliothek übernimmt Heartbeats, Reconnect und Session Resume.
+REST nutzt Home Assistants `aiohttp`; das Gateway verwendet `discord.py[voice]==2.7.1`.
+Die Bibliothek übernimmt Heartbeats, Reconnect, Session Resume und DAVE für Voice.
+Für den nativen Audiotest FFmpeg mit Opus-Encoder installieren (unter Debian/Ubuntu
+`sudo apt-get install ffmpeg`). CI installiert FFmpeg ausdrücklich.
 
 In der Codex-Cloud liegt der Checkout unter `/workspace/your_discord_connect`.
 Bei schreibgeschütztem Benutzer-Cache vor den Befehlen setzen:
@@ -38,7 +40,9 @@ zusätzliches Git-Worktree anlegen, außer es wird ausdrücklich gewünscht.
 | `services.py`, `services.yaml` | Öffentliche DM-Aktion und Python-Funktion; Empfängervalidierung und Service-Antwort. |
 | `config_flow.py` | Token, Serverauswahl, Zugriffsprüfung, Optionen, erneute Anmeldung. |
 | `coordinator.py` | Ein zentraler Mitgliederabruf pro Server und Intervall. |
-| `gateway.py` | Gateway-Lebenszyklus, Presence-Abfragen, Sprachkanal-Snapshots. |
+| `gateway.py` | Gateway-Lebenszyklus, Presence-Abfragen, Bot-Identität und expliziter Kanalabruf je Vollabgleich. |
+| `voice.py` | Voice-Verbindung, HA-Standard-TTS, begrenzte Queue und FFmpeg-Opus-Wiedergabe. |
+| `bot_entity.py`, `select.py`, `text.py` | Zentrales Bot-Gerät und Push-Aktualisierung seiner Bedienelemente. |
 | `entity.py` | Gemeinsame Geräteidentität und Mitgliederentdeckung pro Plattform. |
 | `sensor.py`, `binary_sensor.py` | Sieben Sensoren und vier Binärsensoren pro Mitglied sowie drei zentrale Zähler. |
 | `groups.py` | Zwei feste Config Subentries, zentrale Geräteidentität und Migration bestehender Geräte. |
@@ -106,6 +110,40 @@ wird nicht als Mikrofon-Mute interpretiert. AFK wird anhand der konfigurierten
 `guild.afk_channel`-ID festgestellt. Bei vorhandener Sprachverbindung mit unbekanntem
 Kanalnamen bleibt der AFK-Zustand unbekannt, sofern ein AFK-Kanal konfiguriert ist.
 
+## Bot-Steuerung und Audio
+
+Der eigene Bot wird ausschließlich über `client.user.id` erkannt und nur bei sicherer
+Identität aus den Benutzergeräten ausgefiltert; die Coordinator-Mitgliederliste und
+Zähler bleiben vollständig. Das neue Gerätekennzeichen ist `<guild_id>_bot`, dessen
+Entitäten heißen `<guild_id>_bot_channel`, `<guild_id>_tts_message` und
+`<guild_id>_tts_execute`. Beim Upgrade werden frühere Mitgliederentitäten des eigenen
+Bots bereinigt. Alle drei Steuerelemente gehören zur Untergruppe `central`.
+
+`guild.fetch_channels()` läuft bei jedem vollständigen Mitgliederabgleich. Die Liste
+enthält Voice- und Stage-Kanäle, keine Textkanäle. Gateway-Kanalereignisse aktualisieren
+sie zusätzlich. Eine Revisionsnummer verhindert, dass eine ältere HTTP-Antwort ein
+zwischenzeitlich empfangenes Kanalereignis überschreibt. Die Auswahl wird anhand der
+Kanal-ID ausgewertet, nicht aus einem möglicherweise doppelt vergebenen Namen.
+
+`BotVoice` serialisiert Verbindungsänderungen und Durchsagen separat. Maximal fünf
+TTS-Aufträge einschließlich laufender Wiedergabe werden akzeptiert. Jeder erfasst Text
+und Kanal beim Knopfdruck. Kanalwechsel, Disconnect und Unload brechen Aufträge ab.
+`tts.async_default_engine`/`generate_media_source_id`/`async_get_media_source_audio`
+verwenden den vorhandenen HA-TTS-Unterbau; keine zweite TTS-Anmeldung und keine
+öffentliche Media-URL sind nötig. Der konfigurierte HA-FFmpeg-Pfad wird verwendet.
+
+FFmpeg liest ausschließlich generierte Audiodaten aus einer Pipe; die Protokolle
+sind auf `pipe,fd` eingeschränkt. Prozessstart läuft im Executor. Discords Audio-Thread
+liest Opus-Pakete und übernimmt nach `play` die Source-Bereinigung. Der Completion-
+Callback wechselt threadsicher zurück in den HA-Event-Loop. Abbruch während des
+Prozessstarts bereinigt die Source nach Abschluss des Executor-Jobs. Text maximal
+255 Zeichen, Generierung maximal 60 Sekunden, Audiodaten maximal 10 MiB, Wiedergabe
+maximal 120 Sekunden. Keine automatische Wiederholung nach Fehlern.
+
+Text und Kanalauswahl werden nicht über Neustarts wiederhergestellt. Die bestehende
+DM-Schnittstelle bleibt unabhängig von der Voice-Verbindung nutzbar. Details und
+Bedienungsbeispiele stehen in [voice.md](voice.md).
+
 ## Tests und reale Abnahme
 
 Tests prüfen HTTP-Fehler, Paginierung, Einrichtung, Optionen, Geräteanlage,
@@ -124,6 +162,10 @@ Für eine reale Abnahme auf einer separaten HA-Instanz die
    Selbst-/Server-Mute, Deafen und den konfigurierten AFK-Kanal testen.
 7. Gateway-Verbindung unterbrechen; Geräteerhalt, Nichtverfügbarkeit und Erholung prüfen.
 8. Bot-Token zurücksetzen; erneute Anmeldung abschließen.
+9. Bot-Gerät prüfen: nur eigene Bot-ID aus Benutzergruppe ausgeblendet.
+10. Sprachkanal wählen/wechseln/verlassen; echten TTS-Hörtest mit konfiguriertem Anbieter durchführen.
+11. Kanal anlegen/umbenennen/löschen: sofortige und periodische Dropdown-Aktualisierung prüfen.
+12. Laufende/wartende Durchsagen durch Kanalwechsel abbrechen; Stage-Freigaben und Voice-UDP testen.
 
 Die reale Discord-Abnahme und HACS-Installation aus einem veröffentlichten
 Repository stehen noch aus.

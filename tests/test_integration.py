@@ -62,7 +62,7 @@ async def test_failure_retains_members_and_recovers(hass, entry, discord):
     discord["members"].side_effect = DiscordError
     await entry.runtime_data.async_refresh()
     await hass.async_block_till_done()
-    assert len(dr.async_entries_for_config_entry(dr.async_get(hass), entry.entry_id)) == 3
+    assert len(dr.async_entries_for_config_entry(dr.async_get(hass), entry.entry_id)) == 4
     assert all(hass.states.get(e.entity_id).state == "unavailable" for e in sensors(hass, entry))
     discord["members"].side_effect = None
     await entry.runtime_data.async_refresh()
@@ -77,7 +77,7 @@ async def test_restart_prunes_stale_members(hass, entry, discord):
     discord["members"].return_value = {"1": Member("1", "Alice")}
     await setup(hass, entry)
     assert len(sensors(hass, entry)) == 1
-    assert len(dr.async_entries_for_config_entry(dr.async_get(hass), entry.entry_id)) == 2
+    assert len(dr.async_entries_for_config_entry(dr.async_get(hass), entry.entry_id)) == 3
 
 
 async def test_empty_snapshot_removes_all_members(hass, entry, discord):
@@ -86,7 +86,7 @@ async def test_empty_snapshot_removes_all_members(hass, entry, discord):
     await entry.runtime_data.async_refresh()
     await hass.async_block_till_done()
     assert not sensors(hass, entry)
-    assert len(dr.async_entries_for_config_entry(dr.async_get(hass), entry.entry_id)) == 1
+    assert len(dr.async_entries_for_config_entry(dr.async_get(hass), entry.entry_id)) == 2
     discord["members"].return_value = {"1": Member("1", "Alice")}
     await entry.runtime_data.async_refresh()
     await hass.async_block_till_done()
@@ -176,7 +176,7 @@ def state(hass, key, domain="sensor", member="1"):
 async def test_all_member_entities_and_manual_sync(hass, entry, discord, gateway):
     await setup(hass, entry)
     entities = er.async_entries_for_config_entry(er.async_get(hass), entry.entry_id)
-    assert len(entities) == 26  # Eleven per member and four central entities.
+    assert len(entities) == 29  # Eleven per member, four central entities and three bot controls.
     assert state(hass, "username") == "alice.real"
     assert state(hass, "presence") == "online"
     assert state(hass, "in_voice_channel", "binary_sensor") == "on"
@@ -212,7 +212,7 @@ async def test_gateway_failure_preserves_devices_and_button(hass, entry, discord
     with pytest.raises(HomeAssistantError):
         await hass.services.async_call("button", "press", {"entity_id": button}, blocking=True)
     await hass.async_block_till_done()
-    assert len(dr.async_entries_for_config_entry(dr.async_get(hass), entry.entry_id)) == 3
+    assert len(dr.async_entries_for_config_entry(dr.async_get(hass), entry.entry_id)) == 4
     assert state(hass, "presence") == "unavailable"
     assert hass.states.get(button).state != "unavailable"
 
@@ -225,6 +225,9 @@ async def test_all_member_entities_removed_but_button_survives(hass, entry, disc
     entities = er.async_entries_for_config_entry(er.async_get(hass), entry.entry_id)
     assert {entity.unique_id for entity in entities} == {
         "100_sync",
+        "100_bot_channel",
+        "100_tts_message",
+        "100_tts_execute",
         "100_member_count",
         "100_online_count",
         "100_voice_count",
@@ -259,7 +262,7 @@ async def test_groups_counts_and_repeated_setup(hass, entry, discord, gateway):
     assert alice.via_device_id == central.id
     registry = er.async_get(hass)
     for entity in er.async_entries_for_config_entry(registry, entry.entry_id):
-        expected = "central" if entity.device_id == central.id else "users"
+        expected = "users" if entity.unique_id.startswith(("100_1_", "100_2_")) else "central"
         assert entity.config_subentry_id == groups[expected]
     for key, expected in [("member_count", "2"), ("online_count", "2"), ("voice_count", "1")]:
         entity_id = registry.async_get_entity_id("sensor", DOMAIN, f"100_{key}")

@@ -42,22 +42,28 @@ class DiscordGateway:
         self._error: DiscordError | None = None
         self.on_member_update = None
         self.on_connection_change = None
+        self.on_bot_update = None
+        self._channels = None
+        self._channel_revision = 0
 
         @self._client.event
         async def on_ready():
             self._ready.set()
+            self._notify_bot()
             if self.on_connection_change:
                 self.on_connection_change(True)
 
         @self._client.event
         async def on_resumed():
             self._ready.set()
+            self._notify_bot()
             if self.on_connection_change:
                 self.on_connection_change(True)
 
         @self._client.event
         async def on_disconnect():
             self._ready.clear()
+            self._notify_bot()
             if self.on_connection_change:
                 self.on_connection_change(False)
 
@@ -68,16 +74,101 @@ class DiscordGateway:
         @self._client.event
         async def on_voice_state_update(member, before, after):
             self._publish(member, after)
+            if str(member.id) == self.bot_id and member.guild.id == self._guild_id:
+                self._notify_bot()
+
+        @self._client.event
+        async def on_guild_channel_create(channel):
+            if channel.guild.id == self._guild_id:
+                self._channel_changed(channel)
+
+        @self._client.event
+        async def on_guild_channel_delete(channel):
+            if channel.guild.id == self._guild_id:
+                self._channel_changed(channel, deleted=True)
+
+        @self._client.event
+        async def on_guild_channel_update(before, after):
+            if after.guild.id == self._guild_id:
+                self._channel_changed(after)
 
         @self._client.event
         async def on_guild_unavailable(guild):
+            self._notify_bot()
             if guild.id == self._guild_id and self.on_connection_change:
                 self.on_connection_change(False)
 
         @self._client.event
         async def on_guild_available(guild):
+            self._notify_bot()
             if guild.id == self._guild_id and self.on_connection_change:
                 self.on_connection_change(True)
+
+    @property
+    def bot_id(self):
+        user = self._client.user
+        return str(user.id) if user and isinstance(user.id, int) else None
+
+    @property
+    def bot_name(self):
+        user = self._client.user
+        return user.name if self.bot_id else "Bot"
+
+    @property
+    def guild(self):
+        return self._client.get_guild(self._guild_id)
+
+    @property
+    def connected(self):
+        guild = self.guild
+        return (
+            self._ready.is_set()
+            and self._client.is_ready()
+            and guild is not None
+            and not guild.unavailable
+        )
+
+    def _notify_bot(self):
+        if self.on_bot_update:
+            self.on_bot_update()
+
+    @property
+    def channels(self):
+        if self._channels is not None:
+            return self._channels
+        guild = self.guild
+        return [*guild.voice_channels, *guild.stage_channels] if guild else []
+
+    def _channel_changed(self, channel, *, deleted=False):
+        self._channel_revision += 1
+        channels = {c.id: c for c in self.channels}
+        channels.pop(channel.id, None)
+        if not deleted and channel.type in (
+            discord.ChannelType.voice,
+            discord.ChannelType.stage_voice,
+        ):
+            channels[channel.id] = channel
+        self._channels = list(channels.values())
+        self._notify_bot()
+
+    async def refresh_channels(self):
+        """Explicitly re-fetch channels on every full member sync, not just from cache."""
+        guild = self.guild
+        if not guild or not self.connected:
+            raise DiscordError("Discord gateway is not ready for channel synchronization")
+        revision = self._channel_revision
+        try:
+            async with asyncio.timeout(30):
+                channels = await guild.fetch_channels()
+        except (discord.DiscordException, TimeoutError) as err:
+            raise DiscordError("Discord channel synchronization failed") from err
+        if revision == self._channel_revision:
+            self._channels = [
+                c
+                for c in channels
+                if c.type in (discord.ChannelType.voice, discord.ChannelType.stage_voice)
+            ]
+        self._notify_bot()
 
     def _state(self, member, voice, *, event_time=None):
         channel = voice.channel if voice else None

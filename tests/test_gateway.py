@@ -213,3 +213,40 @@ async def test_guild_outage_notifies_connection_without_user_event(hass, client)
         gateway.on_member_update.assert_not_called()
     finally:
         await gateway.async_close()
+
+
+async def test_channel_refresh_and_gateway_channel_events(hass, client):
+    guild = client.get_guild.return_value
+    guild.voice_channels = []
+    guild.stage_channels = []
+    channel = SimpleNamespace(id=10, name="Old", type=discord.ChannelType.voice, guild=guild)
+    text = SimpleNamespace(id=11, name="Text", type=discord.ChannelType.text, guild=guild)
+    stage = SimpleNamespace(id=12, name="Stage", type=discord.ChannelType.stage_voice, guild=guild)
+    guild.fetch_channels = AsyncMock(return_value=[channel, text, stage])
+    gateway = DiscordGateway(hass, "test-token", "100")
+    gateway.on_bot_update = MagicMock()
+    try:
+        await gateway.snapshot(["1"])
+        await gateway.refresh_channels()
+        assert [c.id for c in gateway.channels] == [10, 12]
+        renamed = SimpleNamespace(id=10, name="New", type=discord.ChannelType.voice, guild=guild)
+        await client.on_guild_channel_update(channel, renamed)
+        assert gateway.channels[-1].name == "New"
+        await client.on_guild_channel_delete(stage)
+        assert [c.id for c in gateway.channels] == [10]
+
+        # An event received during an older HTTP request must not be overwritten.
+        async def fetch():
+            await client.on_guild_channel_update(channel, renamed)
+            return [channel]
+
+        guild.fetch_channels.side_effect = fetch
+        await gateway.refresh_channels()
+        assert gateway.channels[0].name == "New"
+        guild.fetch_channels.side_effect = None
+        guild.fetch_channels.return_value = [stage]
+        await gateway.refresh_channels()
+        assert [c.id for c in gateway.channels] == [12]
+        assert guild.fetch_channels.await_count == 3
+    finally:
+        await gateway.async_close()

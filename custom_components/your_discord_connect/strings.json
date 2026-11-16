@@ -107,6 +107,19 @@
     "button": {
       "sync": {
         "name": "Synchronize users now"
+      },
+      "tts_execute": {
+        "name": "Execute TTS"
+      }
+    },
+    "select": {
+      "bot_channel": {
+        "name": "Voice channel"
+      }
+    },
+    "text": {
+      "tts_message": {
+        "name": "TTS message"
       }
     }
   },
@@ -131,6 +144,42 @@
     },
     "dm_failed": {
       "message": "The Discord request failed. Delivery may be uncertain; no automatic resend will occur."
+    },
+    "voice_channel_missing": {
+      "message": "This voice channel is no longer available."
+    },
+    "voice_not_ready": {
+      "message": "Connect the bot to a voice channel while the Discord connection is available."
+    },
+    "voice_permissions": {
+      "message": "The bot needs View Channel, Connect and Speak permissions for this channel."
+    },
+    "voice_connection_failed": {
+      "message": "Joining or switching the voice channel failed. Check voice networking and permissions."
+    },
+    "voice_cannot_speak": {
+      "message": "The bot is server-muted or suppressed on a Stage. Allow it to speak first."
+    },
+    "tts_invalid_text": {
+      "message": "Enter a non-blank TTS message with at most 255 characters."
+    },
+    "tts_unavailable": {
+      "message": "Configure a Home Assistant TTS provider first."
+    },
+    "tts_generation_failed": {
+      "message": "Home Assistant could not generate the speech audio."
+    },
+    "tts_ffmpeg_failed": {
+      "message": "FFmpeg could not start. Check the Home Assistant FFmpeg installation."
+    },
+    "tts_playback_failed": {
+      "message": "Discord audio playback failed or timed out."
+    },
+    "tts_queue_full": {
+      "message": "At most five announcements can be active or queued."
+    },
+    "tts_interrupted": {
+      "message": "The announcement was canceled, for example by a channel change or shutdown."
     }
   },
   "services": {

@@ -107,6 +107,19 @@
     "button": {
       "sync": {
         "name": "Benutzer jetzt synchronisieren"
+      },
+      "tts_execute": {
+        "name": "TTS ausführen"
+      }
+    },
+    "select": {
+      "bot_channel": {
+        "name": "Sprachkanal"
+      }
+    },
+    "text": {
+      "tts_message": {
+        "name": "TTS-Nachricht"
       }
     }
   },
@@ -131,6 +144,42 @@
     },
     "dm_failed": {
       "message": "Die Discord-Anfrage ist fehlgeschlagen. Die Zustellung kann unklar sein; es erfolgt keine automatische Wiederholung."
+    },
+    "voice_channel_missing": {
+      "message": "Dieser Sprachkanal ist nicht mehr verfügbar."
+    },
+    "voice_not_ready": {
+      "message": "Verbinde den Bot bei aktiver Discord-Verbindung mit einem Sprachkanal."
+    },
+    "voice_permissions": {
+      "message": "Der Bot benötigt für diesen Kanal die Rechte Kanal ansehen, Verbinden und Sprechen."
+    },
+    "voice_connection_failed": {
+      "message": "Beitritt oder Kanalwechsel fehlgeschlagen. Prüfe Sprachverbindung und Berechtigungen."
+    },
+    "voice_cannot_speak": {
+      "message": "Der Bot ist serverseitig stumm oder auf einer Stage nicht zum Sprechen freigegeben."
+    },
+    "tts_invalid_text": {
+      "message": "Gib eine TTS-Nachricht mit höchstens 255 Zeichen ein; sie darf nicht leer sein."
+    },
+    "tts_unavailable": {
+      "message": "Richte zuerst einen TTS-Anbieter in Home Assistant ein."
+    },
+    "tts_generation_failed": {
+      "message": "Home Assistant konnte die Sprachausgabe nicht erzeugen."
+    },
+    "tts_ffmpeg_failed": {
+      "message": "FFmpeg konnte nicht gestartet werden. Prüfe die FFmpeg-Installation von Home Assistant."
+    },
+    "tts_playback_failed": {
+      "message": "Discord-Audiowiedergabe fehlgeschlagen oder Zeitüberschreitung."
+    },
+    "tts_queue_full": {
+      "message": "Es können höchstens fünf Durchsagen laufen oder warten."
+    },
+    "tts_interrupted": {
+      "message": "Die Durchsage wurde abgebrochen, etwa durch Kanalwechsel oder Beenden der Integration."
     }
   },
   "services": {

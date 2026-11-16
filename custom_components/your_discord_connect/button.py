@@ -3,12 +3,13 @@
 from homeassistant.components.button import ButtonEntity
 from homeassistant.exceptions import HomeAssistantError
 
+from .bot_entity import BotEntity
 from .groups import central_device_info
 
 
 async def async_setup_entry(hass, entry, async_add_entities):
     async_add_entities(
-        [DiscordSyncButton(entry.runtime_data)],
+        [DiscordSyncButton(entry.runtime_data), BotTTSButton(entry.runtime_data, "tts_execute")],
         config_subentry_id=entry.runtime_data.groups["central"],
     )
 
@@ -29,3 +30,10 @@ class DiscordSyncButton(ButtonEntity):
         await self.coordinator.async_request_refresh()
         if not self.coordinator.last_update_success:
             raise HomeAssistantError("Discord synchronization failed; check the integration status")
+
+
+class BotTTSButton(BotEntity, ButtonEntity):
+    _attr_icon = "mdi:account-voice"
+
+    async def async_press(self):
+        await self.coordinator.voice.speak()

@@ -11,7 +11,13 @@ from .groups import setup_groups
 from .services import async_register_services
 
 type DiscordConfigEntry = ConfigEntry[DiscordCoordinator]
-PLATFORMS = [Platform.SENSOR, Platform.BINARY_SENSOR, Platform.BUTTON]
+PLATFORMS = [
+    Platform.SENSOR,
+    Platform.BINARY_SENSOR,
+    Platform.BUTTON,
+    Platform.SELECT,
+    Platform.TEXT,
+]
 
 
 async def async_setup(hass: HomeAssistant, config: dict) -> bool:

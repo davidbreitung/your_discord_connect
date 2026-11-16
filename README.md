@@ -4,7 +4,7 @@ Eine eigenständige **Custom Integration für Home Assistant**, die Mitglieder e
 Discord-Servers als virtuelle Geräte abbildet. Kein separater Bot-Prozess und kein
 Home-Assistant-Add-on erforderlich.
 
-**Stand: 0.3.0 – Entwicklungsversion.** Unterstützte Testbasis: Home Assistant
+**Stand: 0.4.0 – Entwicklungsversion.** Unterstützte Testbasis: Home Assistant
 **2026.10.4** mit Python **3.14.2 oder neuer**. Ältere Home-Assistant-Versionen sind
 derzeit nicht unterstützt. Automatisierte Tests simulieren Discord-Antworten;
 ein Test mit einem echten Discord-Server steht noch aus.
@@ -21,12 +21,14 @@ ein Test mit einem echten Discord-Server steht noch aus.
 - Neue Mitglieder werden angelegt, Namen aktualisiert, ausgetretene Mitglieder
   einschließlich ihrer Entitäten aus den Home-Assistant-Registern entfernt.
 - Stabile Server- und Benutzer-IDs verhindern Duplikate bei Namensänderungen.
-- Bots sind eingeschlossen. Mehrere Server sind als separate Einträge möglich;
+- Der eigene Bot hat ein zentrales Gerät mit Kanalauswahl und TTS-Durchsagen;
+  andere Bots bleiben als Benutzer sichtbar. Mehrere Server sind als separate Einträge möglich;
   derselbe Server kann nur einmal eingerichtet werden.
 - Deutsche und englische Oberfläche; erneute Anmeldung bei ungültigem Token.
 
 Private Textnachrichten können über eine Aktion oder aus anderen Integrationen
-gesendet werden. Rollen, Audio-/TTS-Ausgabe und Video sind noch nicht enthalten.
+gesendet werden. TTS-Durchsagen sind über das Bot-Gerät möglich. Rollen, beliebige
+Audiostreams und Video sind noch nicht enthalten.
 Weitere Attribute können auf den bestehenden Geräte-IDs aufbauen.
 
 ## Installation
@@ -64,8 +66,9 @@ Discord-ID. Eigene Einstellungen und betroffene Automationen danach prüfen.
 Jeder Server hat zwei Home-Assistant-Untergruppen (Config Subentries):
 
 - **zentrale Konfiguration:** ein gleichnamiges Gerät mit **Benutzer jetzt synchronisieren**,
-  **Alle Mitglieder**, **Online-Benutzer** und **Benutzer in Channels**.
-- **Benutzer:** alle Mitgliedsgeräte mit Modell/Typ **Benutzer**. Jedes Mitgliedsgerät
+  **Alle Mitglieder**, **Online-Benutzer** und **Benutzer in Channels** sowie ein
+  zusätzliches **Bot-Gerät** mit Sprachkanal-Dropdown, **TTS-Nachricht** und **TTS ausführen**.
+- **Benutzer:** alle Mitgliedsgeräte außer dem eindeutig erkannten eigenen Bot, mit Modell/Typ **Benutzer**. Jedes Mitgliedsgerät
   ist über `via_device_id` mit dem zentralen Gerät verknüpft.
 
 Die zentrale Gruppe wird zuerst angelegt. Die Integration kann die Sortierung der
@@ -138,8 +141,21 @@ der Integration werden die zugehörigen gespeicherten Beobachtungen entfernt.
 **Update von 0.1.0:** Im Developer Portal zusätzlich **Presence Intent** aktivieren,
 Integration aktualisieren und Home Assistant neu starten. Bestehende Geräte und
 Anzeigenamen-Sensoren behalten ihre IDs; die neuen Entitäten werden automatisch ergänzt.
-Der Bot benötigt Zugriff auf die gewünschten Sprachkanäle. Es wird weder einem
-Sprachkanal beigetreten noch Audio übertragen.
+Der Bot benötigt Zugriff auf die gewünschten Sprachkanäle. Ein Beitritt erfolgt
+erst nach Kanalauswahl; TTS-Audio erst nach Drücken des Ausführungsbuttons.
+
+## Bot-Kanalauswahl und TTS
+
+Im zentralen **Bot-Gerät** einen Sprach- oder Stage-Kanal auswählen, das Feld
+**TTS-Nachricht** befüllen und **TTS ausführen** drücken. Die Spracherzeugung nutzt
+Home Assistants Standard-TTS-Anbieter. **alle verlassen** ist der erste Dropdown-
+Eintrag und beendet die Sprachverbindung. Die Liste aktualisiert sich bei jedem
+Vollabgleich und zusätzlich bei Kanaländerungen per Gateway.
+
+Benötigt werden ein HA-TTS-Anbieter, FFmpeg mit Opus-Unterstützung sowie Discords
+Rechte **Verbinden** und **Sprechen**. Für Voice ist außerdem ausgehendes UDP nötig.
+Die [vollständige Voice-/TTS-Anleitung](docs/voice.md) beschreibt Stage-Freigaben,
+Queue, Abbruch, Namensänderungen, Automationsbeispiele und Grenzen.
 
 ## Private Nachrichten aus anderen Integrationen
 
@@ -170,6 +186,7 @@ Administratorrechte und Message Content Intent sind nicht nötig.
 - [Installation und Fehlerbehebung](docs/installation.md)
 - [Entwicklung, Architektur und Tests](docs/development.md)
 - [Schnittstelle für private Nachrichten](docs/api.md)
+- [Bot-Kanalauswahl und TTS-Durchsagen](docs/voice.md)
 - [Änderungsverlauf](CHANGELOG.md)
 - [Fehler melden](https://github.com/davidbreitung/your_discord_connect/issues)
 

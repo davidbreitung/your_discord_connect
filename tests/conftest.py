@@ -57,6 +57,10 @@ def gateway():
 
     with (
         patch(
+            "custom_components.your_discord_connect.gateway.DiscordGateway.refresh_channels",
+            new_callable=AsyncMock,
+        ) as channels,
+        patch(
             "custom_components.your_discord_connect.gateway.DiscordGateway.snapshot",
             new_callable=AsyncMock,
             return_value={
@@ -69,4 +73,4 @@ def gateway():
             new_callable=AsyncMock,
         ) as close,
     ):
-        yield {"snapshot": snapshot, "close": close}
+        yield {"snapshot": snapshot, "close": close, "channels": channels}

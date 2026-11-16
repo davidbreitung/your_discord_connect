@@ -3,7 +3,8 @@
 Ab Version 0.3.0 kann eine andere Integration die konfigurierten Discord-Bots zum
 Versand privater **Textnachrichten** nutzen. Sie benötigt keine eigene Bot-Anmeldung
 und keinen Zugriff auf Tokens. Audio, TTS-Wiedergabe, Dateianhänge und Video sind
-derzeit nicht Bestandteil dieser Schnittstelle.
+nicht Bestandteil dieser DM-Schnittstelle. Für TTS-Durchsagen im Sprachkanal gibt es
+seit 0.4.0 die separaten [Bot-Entitäten](voice.md).
 
 ## Empfänger
 

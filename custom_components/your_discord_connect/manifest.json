@@ -10,7 +10,10 @@
   "iot_class": "cloud_push",
   "issue_tracker": "https://github.com/davidbreitung/your_discord_connect/issues",
   "requirements": [
-    "discord.py==2.6.4"
+    "discord.py[voice]==2.7.1"
   ],
-  "version": "0.3.0"
+  "version": "0.4.0",
+  "after_dependencies": [
+    "tts"
+  ]
 }

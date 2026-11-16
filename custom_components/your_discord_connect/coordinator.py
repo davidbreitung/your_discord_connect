@@ -25,6 +25,7 @@ from .const import (
 )
 from .gateway import DiscordGateway
 from .groups import CENTRAL_KEYS
+from .voice import BotVoice
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -45,6 +46,7 @@ class DiscordCoordinator(DataUpdateCoordinator[dict[str, Member]]):
         self.guild_id = entry.data[CONF_GUILD_ID]
         self.client = DiscordClient(async_get_clientsession(hass), entry.data[CONF_TOKEN])
         self.gateway = DiscordGateway(hass, entry.data[CONF_TOKEN], self.guild_id)
+        self.voice = BotVoice(hass, self.gateway)
         self.entry_id = entry.entry_id
         self.activity = ActivityTracker(hass, self.guild_id)
         self._syncing = False
@@ -72,8 +74,17 @@ class DiscordCoordinator(DataUpdateCoordinator[dict[str, Member]]):
             self.hass.async_create_task(self.async_request_refresh())
 
     async def async_close(self):
-        await self.gateway.async_close()
-        await self.activity.close()
+        try:
+            await self.voice.async_close()
+        finally:
+            try:
+                await self.gateway.async_close()
+            finally:
+                await self.activity.close()
+
+    @property
+    def bot_id(self):
+        return self.gateway.bot_id
 
     async def _async_update_data(self) -> dict[str, Member]:
         self._syncing = True
@@ -82,6 +93,7 @@ class DiscordCoordinator(DataUpdateCoordinator[dict[str, Member]]):
             await self.activity.load()
             members = await self.client.members(self.guild_id)
             states = await self.gateway.snapshot(list(members))
+            await self.gateway.refresh_channels()
             states = {**states, **self._pending_updates}
             snapshot = {
                 member_id: self.activity.observe(
@@ -107,11 +119,12 @@ class DiscordCoordinator(DataUpdateCoordinator[dict[str, Member]]):
         devices = dr.async_get(self.hass)
         entities = er.async_get(self.hass)
         prefix = f"{self.guild_id}_"
-        valid_ids = {f"{prefix}{member_id}" for member_id in members}
+        valid_ids = {f"{prefix}{member_id}" for member_id in members if member_id != self.bot_id}
         keys = (*MEMBER_SENSOR_KEYS, *MEMBER_BINARY_KEYS)
         valid_entities = {f"{identifier}_{key}" for identifier in valid_ids for key in keys}
         valid_entities.update(f"{self.guild_id}_{key}" for key in CENTRAL_KEYS)
         valid_ids.add(f"{self.guild_id}_central")
+        valid_ids.add(f"{self.guild_id}_bot")
         for entity in er.async_entries_for_config_entry(entities, self.entry_id):
             if (
                 entity.platform == DOMAIN
@@ -131,3 +144,9 @@ class DiscordCoordinator(DataUpdateCoordinator[dict[str, Member]]):
             ):
                 if device.name != member.display_name:
                     devices.async_update_device(device.id, name=member.display_name)
+        if bot := devices.async_get_device_by_identifier(
+            (DOMAIN, f"{self.guild_id}_bot"), self.entry_id
+        ):
+            name = f"Bot: {self.gateway.bot_name}"
+            if bot.name != name:
+                devices.async_update_device(bot.id, name=name)
