@@ -4,7 +4,7 @@ Eine eigenständige **Custom Integration für Home Assistant**, die Mitglieder e
 Discord-Servers als virtuelle Geräte abbildet. Kein separater Bot-Prozess und kein
 Home-Assistant-Add-on erforderlich.
 
-**Stand: 0.2.0 – Entwicklungsversion.** Unterstützte Testbasis: Home Assistant
+**Stand: 0.3.0 – Entwicklungsversion.** Unterstützte Testbasis: Home Assistant
 **2026.10.4** mit Python **3.14.2 oder neuer**. Ältere Home-Assistant-Versionen sind
 derzeit nicht unterstützt. Automatisierte Tests simulieren Discord-Antworten;
 ein Test mit einem echten Discord-Server steht noch aus.
@@ -13,10 +13,10 @@ ein Test mit einem echten Discord-Server steht noch aus.
 
 - Einrichtung über die Home-Assistant-Oberfläche: Bot-Token eingeben, Server aus
   einer automatisch ermittelten Liste auswählen, Mitgliederzugriff prüfen lassen.
-- Pro Mitglied ein virtuelles Gerät mit fünf Entitäten: **Anzeigename**,
-  **Benutzername**, **Presence-Status**, **Im Sprachkanal** und **Sprachkanal**.
+- Zentrale Konfiguration mit Synchronisationsknopf und drei Serverzählern.
+- Mitgliedergeräte in der Gruppe **Benutzer**, mit elf Entitäten pro Mitglied.
 - Anzeigename: Server-Spitzname → globaler Discord-Anzeigename → Benutzername.
-- Abgleich beim Start und alle **15 Minuten**; zentral pro Server auf ganze
+- Abgleich beim Start und alle **30 Minuten**; zentral pro Server auf ganze
   **1 bis 1440 Minuten** einstellbar.
 - Neue Mitglieder werden angelegt, Namen aktualisiert, ausgetretene Mitglieder
   einschließlich ihrer Entitäten aus den Home-Assistant-Registern entfernt.
@@ -25,7 +25,8 @@ ein Test mit einem echten Discord-Server steht noch aus.
   derselbe Server kann nur einmal eingerichtet werden.
 - Deutsche und englische Oberfläche; erneute Anmeldung bei ungültigem Token.
 
-Nachrichten und Rollen sind noch nicht enthalten.
+Private Textnachrichten können über eine Aktion oder aus anderen Integrationen
+gesendet werden. Rollen, Audio-/TTS-Ausgabe und Video sind noch nicht enthalten.
 Weitere Attribute können auf den bestehenden Geräte-IDs aufbauen.
 
 ## Installation
@@ -58,7 +59,26 @@ Nach einem Austritt müssen Automationen, die auf entfernte Entitäten verweisen
 gegebenenfalls angepasst werden. Ein Wiedereintritt verwendet dieselbe eindeutige
 Discord-ID. Eigene Einstellungen und betroffene Automationen danach prüfen.
 
-## Neue Entitäten und manuelle Synchronisation
+## Gerätegruppen und zentrale Konfiguration
+
+Jeder Server hat zwei Home-Assistant-Untergruppen (Config Subentries):
+
+- **zentrale Konfiguration:** ein gleichnamiges Gerät mit **Benutzer jetzt synchronisieren**,
+  **Alle Mitglieder**, **Online-Benutzer** und **Benutzer in Channels**.
+- **Benutzer:** alle Mitgliedsgeräte mit Modell/Typ **Benutzer**. Jedes Mitgliedsgerät
+  ist über `via_device_id` mit dem zentralen Gerät verknüpft.
+
+Die zentrale Gruppe wird zuerst angelegt. Die Integration kann die Sortierung der
+Home-Assistant-Oberfläche jedoch nicht erzwingen; dort kann „Benutzer“ alphabetisch
+zuerst erscheinen. Die Gruppen sind keine zusätzlichen Discord-Server.
+
+Alle Zähler schließen Bots ein. Online bedeutet hier **Presence online/idle/dnd ODER
+Sprachkanalverbindung**. Der Presence-Sensor selbst bleibt unverändert: Unsichtbar
+wird weiterhin als offline angezeigt. Der Channel-Zähler zählt Mitglieder in Sprach-
+und Stage-Kanälen, nicht Textkanalzugriffe. Wenn fehlende Zustände einen exakten Zähler
+verhindern, zeigt dieser unbekannt statt einer irreführenden Teilanzahl.
+
+## Entitäten pro Benutzer
 
 | Entität | Bedeutung |
 | --- | --- |
@@ -67,18 +87,53 @@ Discord-ID. Eigene Einstellungen und betroffene Automationen danach prüfen.
 | Presence-Status | `online`, `idle`, `dnd` oder `offline`; in der Oberfläche übersetzt. Unsichtbar erscheint als offline. |
 | Im Sprachkanal | Binärsensor: an bei Verbindung mit einem Sprach- oder Stage-Kanal, sonst aus. |
 | Sprachkanal | Name des aktuellen Kanals; ohne Kanal ist der Sensor unbekannt. |
+| Lautsprecher stumm | Discord-Deafen: selbst deaktiviert oder serverseitig deaktiviert; kein Hardwarezustand. |
+| Mikrofon stumm | Selbst-Mute oder serverseitiges Mute. Stage-Unterdrückung ist kein Mute-Schalter. |
+| Im AFK-Kanal | Mitglied befindet sich im konfigurierten AFK-Sprachkanal des Servers; nicht bloß in einem Kanal namens „AFK“. |
+| Zuletzt anwesend erkannt | Letzte beobachtete erste Anwesenheit oder Wechsel zu anwesend (Presence sichtbar oder Sprachverbindung). |
+| Zuletzt nicht anwesend erkannt | Letzte beobachtete erste Abwesenheit oder Wechsel zu offline ohne Sprachverbindung. |
+| Letztes Gateway-Ereignis | Lokaler Empfangszeitpunkt des letzten Presence-/Sprachstatusereignisses für dieses Mitglied. |
 
-Am Integrationseintrag gibt es den Knopf **<Servername> synchronisieren**. Er
-aktualisiert alle Mitglieder und ihre fünf Entitäten gemeinsam. Er kann auch mit
-Home Assistants Aktion `button.press` in Automationen oder Dashboards genutzt werden.
-Der Knopf bleibt nach einem fehlgeschlagenen Abgleich bedienbar.
+## Sofortige Aktualisierung und manueller Abgleich
 
-Die Gateway-Verbindung läuft dauerhaft und hält Sprachkanalzustände aktuell vor.
-Die Entitäten werden dennoch nur bei der geplanten oder manuellen Synchronisation
-aktualisiert. Presence wird dabei über das Gateway explizit abgefragt. Fehlende
-Gateway-Mitglieder ergeben unbekannte Statuswerte, keine erfundenen Offline-Werte.
-Scheitert der Abgleich, bleiben Geräte erhalten und Mitgliederentitäten werden
-nicht verfügbar. Ohne Sprachverbindung: Binärsensor aus, Kanalname unbekannt.
+Presence, Sprachkanal, Mute und AFK werden direkt aus Gateway-Ereignissen übernommen.
+Auch die Zähler und Beobachtungszeitpunkte aktualisieren sich dabei sofort. Für
+Automationen die normalen Home-Assistant-Zustandstrigger auf diesen Entitäten nutzen.
+Discord garantiert keine maximale Übertragungszeit; kein Intervall muss abgewartet werden.
+
+Unter **Einstellungen → Geräte & Dienste → Your Discord Connect → zentrale Konfiguration**
+den Knopf **Benutzer jetzt synchronisieren** drücken. Er ist auch über `button.press`
+in Automationen nutzbar und bleibt nach Fehlern bedienbar. Bestehende Button-Entitäts-IDs
+bleiben erhalten, auch wenn ihr bisheriger Name noch den Servernamen enthält.
+
+Der vollständige Abgleich entdeckt/entfernt Mitglieder und prüft alle Zustände: beim
+Start, manuell und standardmäßig alle **30 Minuten**. Eigene gespeicherte Intervalle
+bleiben erhalten. Häufige Gateway-Ereignisse verschieben diesen Abgleich nicht.
+Neue Mitgliedsgeräte erscheinen mit dem nächsten vollständigen Abgleich.
+
+Ohne Sprachverbindung sind Sprach-, Mute- und AFK-Binärsensoren aus; der Kanalname ist
+unbekannt. Fehlende Gateway-Mitglieder ergeben unbekannte Statuswerte. Beim
+Gateway-Ausfall sind Mitgliederentitäten und Zähler nicht verfügbar; Geräte bleiben
+erhalten. Nach Wiederverbindung wird ein vollständiger Abgleich angefordert.
+
+### Bedeutung der Zeitstempel
+
+Es werden **Beobachtungen**, keine tatsächlichen Discord-An- oder Abmeldezeiten
+festgehalten. Erste bekannte Zustände erhalten den Zeitpunkt ihrer Beobachtung;
+wiederholte gleiche Zustände überschreiben die An-/Abwesenheitszeitpunkte nicht.
+Ein unsichtbares Mitglied im Sprachkanal gilt als anwesend. Erst offline **und** ohne
+Sprachverbindung gilt als nicht anwesend. Bot-Verbindungsabbrüche zählen nie als Abwesenheit.
+
+„Letztes Gateway-Ereignis“ wird weder durch Polling noch durch Heartbeats verändert.
+Ein alter Wert kann schlicht bedeuten, dass sich beim Benutzer nichts geändert hat.
+Vor dem ersten empfangenen Benutzerereignis ist er unbekannt. Zeitstempel werden in
+UTC gespeichert und von Home Assistant in der lokalen Zeitzone angezeigt.
+
+Die Zeitstempel bleiben über Neustarts erhalten. Während Ausfällen verpasste Übergänge
+können nicht nachträglich rekonstruiert werden. Speicherung erfolgt gebündelt nach fünf
+Sekunden und beim geordneten Stoppen; ein harter Prozessabbruch kann die letzten noch
+nicht gespeicherten Ereignisse verlieren. Bei bestätigtem Serveraustritt oder Entfernen
+der Integration werden die zugehörigen gespeicherten Beobachtungen entfernt.
 
 **Update von 0.1.0:** Im Developer Portal zusätzlich **Presence Intent** aktivieren,
 Integration aktualisieren und Home Assistant neu starten. Bestehende Geräte und
@@ -86,11 +141,23 @@ Anzeigenamen-Sensoren behalten ihre IDs; die neuen Entitäten werden automatisch
 Der Bot benötigt Zugriff auf die gewünschten Sprachkanäle. Es wird weder einem
 Sprachkanal beigetreten noch Audio übertragen.
 
+## Private Nachrichten aus anderen Integrationen
+
+Mit `your_discord_connect.send_direct_message` eine private Textnachricht an ein
+vorhandenes Benutzergerät senden. Andere Integrationen können dieselbe Aktion oder
+`async_send_direct_message(hass, device_id, content)` nutzen; sie benötigen kein Bot-Token.
+Das zentrale Gerät ist kein Empfänger. Bis zu 2000 Zeichen pro Nachricht sind möglich.
+Discord kann DMs aufgrund der Empfängereinstellungen ablehnen. Nachrichten werden nur
+auf ausdrücklichen Aufruf gesendet, niemals automatisch bei der Synchronisation.
+
+Die [Schnittstellendokumentation](docs/api.md) enthält YAML-/Python-Beispiele,
+Rückgabewerte, Empfängerauswahl und Fehlerbehandlung.
+
 ## Datenschutz
 
-Die Integration liest Discord-Daten per HTTPS und Gateway-WebSocket und sendet keine
-Nachrichten. Benutzer-IDs, Namen, Presence und Sprachkanalbelegung werden in Home
-Assistant verarbeitet; Sensorwerte
+Die Integration liest Discord-Daten per HTTPS und Gateway-WebSocket. Private
+Textnachrichten werden ausschließlich nach Aufruf der Versandaktion gesendet. Benutzer-IDs, Namen, Presence und Sprachkanalbelegung werden in Home
+Assistant verarbeitet. Beobachtungszeitpunkte werden zusätzlich lokal gespeichert; Sensorwerte
 können durch den Recorder historisiert werden. Bei Bedarf die Entitäten in der
 [Recorder-Konfiguration](https://www.home-assistant.io/integrations/recorder/) ausschließen.
 
@@ -102,6 +169,7 @@ Administratorrechte und Message Content Intent sind nicht nötig.
 
 - [Installation und Fehlerbehebung](docs/installation.md)
 - [Entwicklung, Architektur und Tests](docs/development.md)
+- [Schnittstelle für private Nachrichten](docs/api.md)
 - [Änderungsverlauf](CHANGELOG.md)
 - [Fehler melden](https://github.com/davidbreitung/your_discord_connect/issues)
 

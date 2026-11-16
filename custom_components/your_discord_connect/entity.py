@@ -23,7 +23,10 @@ def add_member_entities(entry, async_add_entities, factory):
         new = current - known
         known.intersection_update(current)
         known.update(new)
-        async_add_entities(entity for member_id in sorted(new) for entity in factory(member_id))
+        async_add_entities(
+            (entity for member_id in sorted(new) for entity in factory(member_id)),
+            config_subentry_id=coordinator.groups["users"],
+        )
 
     entry.async_on_unload(coordinator.async_add_listener(reconcile))
     reconcile()
@@ -49,7 +52,8 @@ class DiscordMemberEntity(CoordinatorEntity[DiscordCoordinator]):
             identifiers={(DOMAIN, self._identifier)},
             name=member.display_name,
             manufacturer="Discord",
-            model="Server member",
+            model="Benutzer",
+            via_device_id=self.coordinator.central_device_id,
             entry_type=DeviceEntryType.SERVICE,
         )
 

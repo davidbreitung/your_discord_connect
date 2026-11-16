@@ -74,8 +74,9 @@ als online erscheinen. Sein Online-Status allein belegt keinen erfolgreichen Abg
 4. Der REST-Mitgliederzugriff wird geprüft. Beim Laden des Eintrags wird zusätzlich
    die Gateway-Verbindung aufgebaut. Fehlende Intents dort aktivieren und den
    Integrationseintrag anschließend neu laden.
-5. Jedes Gerät erhält Anzeigename, Benutzername, Presence-Status, einen Binärsensor
-   für Sprachkanalverbindung und den Sprachkanalnamen.
+5. Unter **zentrale Konfiguration** erscheinen Sync-Knopf und Zähler. In der Gruppe
+   **Benutzer** erhält jedes Mitglied elf Entitäten für Namen, Presence, Sprachkanal,
+   Mute, AFK und Beobachtungszeitpunkte (siehe README).
    Auch der Bot selbst zählt als Mitglied.
 
 Große Server werden in Seiten mit bis zu 1000 Mitgliedern geladen; der erste und
@@ -85,14 +86,15 @@ in Gruppen von höchstens 100 Benutzer-IDs über das Gateway.
 ## 5. Intervall ändern
 
 Am Integrationseintrag **Konfigurieren** wählen und eine ganze Zahl zwischen
-**1 und 1440 Minuten** eingeben. Standard: **15 Minuten**. Speichern lädt den
+**1 und 1440 Minuten** eingeben. Standard: **30 Minuten**. Speichern lädt den
 Eintrag neu und synchronisiert sofort. Für große Server und mehrere Einträge
 ein ausreichend langes Intervall wählen, um Ratenbegrenzungen zu vermeiden.
 
 ## 6. Manuell synchronisieren
 
-Unter dem Integrationseintrag den Knopf **<Servername> synchronisieren** drücken.
-Er aktualisiert Mitglieder, Namen, Presence und Sprachkanalbelegung gemeinsam.
+Im Gerät **zentrale Konfiguration** den Knopf **Benutzer jetzt synchronisieren** drücken.
+Er aktualisiert Mitglieder, Namen, Status und Zähler gemeinsam. Presence-, Sprach-,
+Mute- und AFK-Änderungen erscheinen zusätzlich sofort per Gateway-Ereignis.
 Alternativ `button.press` mit dieser Entität in einer Automation verwenden. Schnelle
 Mehrfachaufrufe werden durch Home Assistants Coordinator zusammengefasst.
 
@@ -113,10 +115,19 @@ Verbindungsfehler werden Mitgliederentitäten nicht verfügbar; keine Geräte we
 | Verbindung fehlgeschlagen | DNS, Internet und HTTPS-Zugriff auf `discord.com` und WSS auf Discord-Gateway-Adressen prüfen; Discord könnte vorübergehend ausgefallen sein. |
 | Ratenbegrenzung | Warten; im Betrieb wird beim nächsten Intervall erneut versucht. Bei Bedarf Intervall erhöhen. |
 | Sensoren nicht verfügbar | Letzter Abgleich fehlgeschlagen. Geräte bleiben erhalten. Eventuelle Aufforderung zur erneuten Anmeldung abschließen. |
-| Mitglied fehlt noch | Nächstes Intervall abwarten oder Integrationseintrag neu laden. Kein Echtzeitabgleich. |
+| Mitglied fehlt noch | Nächstes Intervall abwarten oder Integrationseintrag neu laden. Neue Mitglieder werden beim vollständigen Abgleich entdeckt; bestehende Statusentitäten aktualisieren sich sofort per Gateway. |
 | Alter Gerätename | Eigene HA-Gerätenamen bleiben erhalten. Der Anzeigenamen-Sensor enthält den aktuellen Discord-Namen. |
 
-## Update von 0.1.0 auf 0.2.0
+## Update auf 0.3.0
+
+Integration aktualisieren und Home Assistant neu starten. Die Gruppen, das zentrale
+Gerät, Zähler und zusätzlichen Mitgliederentitäten werden automatisch angelegt.
+Bestehende Geräte- und Entitäts-IDs sowie eigene Gerätenamen bleiben erhalten.
+Den Integrationseintrag nicht löschen. Ohne eigene Intervalloption gilt jetzt ein
+Standard von **30 Minuten**; ein explizit gespeichertes Intervall wird nicht verändert.
+Die Reihenfolge der beiden Gruppen bestimmt die Home-Assistant-Oberfläche.
+
+## Zusätzliche Voraussetzung beim Update von 0.1.0
 
 Vor dem Update **Presence Intent** im Developer Portal aktivieren und die Sichtbarkeit
 relevanter Sprachkanäle für den Bot prüfen. Danach aktualisieren und Home Assistant

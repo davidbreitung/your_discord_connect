@@ -41,7 +41,7 @@
     "step": {
       "init": {
         "title": "Mitglieder synchronisieren",
-        "description": "Intervall für alle Mitglieder dieses Servers. Änderungen lösen sofort einen Abgleich aus. Standard: 15 Minuten.",
+        "description": "Intervall für alle Mitglieder dieses Servers. Änderungen lösen sofort einen Abgleich aus. Standard: 30 Minuten.",
         "data": {
           "sync_interval": "Synchronisationsintervall (Minuten)"
         }
@@ -70,16 +70,82 @@
       },
       "voice_channel": {
         "name": "Sprachkanal"
+      },
+      "member_count": {
+        "name": "Alle Mitglieder"
+      },
+      "online_count": {
+        "name": "Online-Benutzer"
+      },
+      "voice_count": {
+        "name": "Benutzer in Channels"
+      },
+      "last_present": {
+        "name": "Zuletzt anwesend erkannt"
+      },
+      "last_absent": {
+        "name": "Zuletzt nicht anwesend erkannt"
+      },
+      "last_gateway_event": {
+        "name": "Letztes Gateway-Ereignis"
       }
     },
     "binary_sensor": {
       "in_voice_channel": {
         "name": "Im Sprachkanal"
+      },
+      "speaker_muted": {
+        "name": "Lautsprecher stumm"
+      },
+      "microphone_muted": {
+        "name": "Mikrofon stumm"
+      },
+      "in_afk_channel": {
+        "name": "Im AFK-Kanal"
       }
     },
     "button": {
       "sync": {
-        "name": "{server} synchronisieren"
+        "name": "Benutzer jetzt synchronisieren"
+      }
+    }
+  },
+  "exceptions": {
+    "invalid_message": {
+      "message": "Die Nachricht muss 1 bis 2000 Zeichen enthalten und darf nicht leer sein."
+    },
+    "invalid_recipient": {
+      "message": "Wähle ein vorhandenes Discord-Benutzergerät, nicht die zentrale Konfiguration."
+    },
+    "entry_not_ready": {
+      "message": "Der ausgewählte Discord-Integrationseintrag ist nicht geladen."
+    },
+    "dm_invalid_auth": {
+      "message": "Das Bot-Token ist ungültig. Melde die Integration erneut an."
+    },
+    "dm_forbidden": {
+      "message": "Discord verweigert die private Nachricht. Das Mitglied blockiert möglicherweise Direktnachrichten oder den Bot."
+    },
+    "dm_rate_limited": {
+      "message": "Discord begrenzt die Anfragen. Es erfolgt keine automatische Wiederholung."
+    },
+    "dm_failed": {
+      "message": "Die Discord-Anfrage ist fehlgeschlagen. Die Zustellung kann unklar sein; es erfolgt keine automatische Wiederholung."
+    }
+  },
+  "services": {
+    "send_direct_message": {
+      "name": "Private Nachricht senden",
+      "description": "Sendet Text mit dem zugehörigen Bot an ein vorhandenes Benutzergerät.",
+      "fields": {
+        "device_id": {
+          "name": "Benutzergerät",
+          "description": "Ein Mitgliedsgerät auswählen."
+        },
+        "content": {
+          "name": "Nachricht",
+          "description": "1 bis 2000 Zeichen; Erwähnungsbenachrichtigungen sind deaktiviert."
+        }
       }
     }
   }

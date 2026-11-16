@@ -1,6 +1,6 @@
 [project]
 name = "your-discord-connect"
-version = "0.2.0"
+version = "0.3.0"
 description = "Discord server members as Home Assistant devices"
 requires-python = ">=3.14.2"
 dependencies = ["discord.py==2.6.4"]

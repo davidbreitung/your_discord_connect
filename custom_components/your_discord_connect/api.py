@@ -1,6 +1,7 @@
-"""Read-only Discord REST client for server discovery and member identities."""
+"""Discord REST client for member discovery and explicitly requested direct messages."""
 
 from dataclasses import dataclass
+from datetime import datetime
 from time import monotonic
 
 import aiohttp
@@ -38,6 +39,12 @@ class Member:
     presence: str | None = None
     in_voice_channel: bool | None = None
     voice_channel: str | None = None
+    speaker_muted: bool | None = None
+    microphone_muted: bool | None = None
+    in_afk_channel: bool | None = None
+    last_present: datetime | None = None
+    last_absent: datetime | None = None
+    last_gateway_event: datetime | None = None
 
 
 class DiscordClient:
@@ -49,18 +56,23 @@ class DiscordClient:
         self._retry_at = 0.0
 
     async def _get(self, path: str, params: dict | None = None):
+        return await self._request("GET", path, params=params)
+
+    async def _request(self, method: str, path: str, *, params=None, payload=None):
         if monotonic() < self._retry_at:
             raise DiscordRateLimitError
         try:
-            async with self._session.get(
+            async with self._session.request(
+                method,
                 f"{API_BASE}{path}",
                 headers={
                     "Authorization": f"Bot {self._token}",
                     "User-Agent": (
-                        "DiscordBot (https://github.com/davidbreitung/your_discord_connect, 0.2.0)"
+                        "DiscordBot (https://github.com/davidbreitung/your_discord_connect, 0.3.0)"
                     ),
                 },
                 params=params,
+                json=payload,
                 timeout=aiohttp.ClientTimeout(total=30),
                 allow_redirects=False,
             ) as response:
@@ -82,6 +94,32 @@ class DiscordClient:
                 return await response.json()
         except (aiohttp.ClientError, TimeoutError, ValueError) as err:
             raise DiscordError("Cannot read Discord response") from err
+
+    async def send_direct_message(self, member_id: str, content: str) -> dict[str, str]:
+        """Open the DM and send once; never retry an uncertain delivery automatically."""
+        channel = await self._request(
+            "POST", "/users/@me/channels", payload={"recipient_id": member_id}
+        )
+        try:
+            channel_id = str(channel["id"])
+            if not channel_id.isdigit():
+                raise ValueError
+        except (KeyError, TypeError, ValueError) as err:
+            raise DiscordError("Invalid direct message channel response") from err
+        message = await self._request(
+            "POST",
+            f"/channels/{channel_id}/messages",
+            payload={"content": content, "allowed_mentions": {"parse": []}},
+        )
+        try:
+            message_id = str(message["id"])
+            if not message_id.isdigit():
+                raise ValueError
+        except (KeyError, TypeError, ValueError) as err:
+            raise DiscordError(
+                "Invalid message acknowledgement; delivery status is unknown"
+            ) from err
+        return {"message_id": message_id, "recipient_id": member_id}
 
     async def guilds(self) -> dict[str, str]:
         """List every server the bot has joined, including pagination."""

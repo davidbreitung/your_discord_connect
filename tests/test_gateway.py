@@ -32,12 +32,23 @@ def client():
     client.start = AsyncMock(side_effect=start)
     guild = client.get_guild.return_value
     guild.unavailable = False
+    guild.id = 100
+    guild.afk_channel = None
     guild.query_members = AsyncMock(
         return_value=[
             SimpleNamespace(
-                id=1, status="online", voice=SimpleNamespace(channel=SimpleNamespace(name="Lounge"))
+                id=1,
+                status="online",
+                guild=guild,
+                voice=SimpleNamespace(
+                    self_deaf=False,
+                    deaf=False,
+                    self_mute=False,
+                    mute=False,
+                    channel=SimpleNamespace(name="Lounge", id=10),
+                ),
             ),
-            SimpleNamespace(id=2, status="offline", voice=None),
+            SimpleNamespace(id=2, status="offline", voice=None, guild=guild),
         ]
     )
     with patch(
@@ -122,7 +133,14 @@ async def test_close_before_start(hass):
 
 async def test_voice_without_resolved_channel_name(hass, client):
     client.get_guild.return_value.query_members.return_value = [
-        SimpleNamespace(id=1, status="dnd", voice=SimpleNamespace(channel=None))
+        SimpleNamespace(
+            id=1,
+            status="dnd",
+            guild=client.get_guild.return_value,
+            voice=SimpleNamespace(
+                self_deaf=False, deaf=False, self_mute=False, mute=False, channel=None
+            ),
+        )
     ]
     gateway = DiscordGateway(hass, "test-token", "100")
     try:
@@ -142,5 +160,56 @@ async def test_resumed_connection_is_reused(hass, client):
         await client.on_resumed()
         assert (await gateway.snapshot(["1"]))["1"].presence == "online"
         client.start.assert_awaited_once()
+    finally:
+        await gateway.async_close()
+
+
+async def test_gateway_events_are_targeted_and_include_voice_flags(hass, client):
+    updates = MagicMock()
+    gateway = DiscordGateway(hass, "test-token", "100")
+    gateway.on_member_update = updates
+    guild = client.get_guild.return_value
+    channel = SimpleNamespace(id=10, name="AFK")
+    guild.afk_channel = channel
+    voice = SimpleNamespace(channel=channel, self_mute=False, mute=True, self_deaf=True, deaf=False)
+    member = SimpleNamespace(id=1, guild=guild, status="offline", voice=voice)
+    try:
+        await gateway.snapshot(["1"])
+        updates.assert_not_called()  # Queries are not gateway events for the user timestamp.
+        await client.on_voice_state_update(member, None, voice)
+        uid, event = updates.call_args.args
+        assert uid == "1"
+        assert event.in_afk_channel is True
+        assert event.microphone_muted is True
+        assert event.speaker_muted is True
+        assert event.in_voice_channel is True
+        assert event.last_gateway_event is not None
+        await client.on_presence_update(member, member)
+        assert updates.call_count == 2
+        await client.on_disconnect()
+        await client.on_voice_state_update(member, voice, None)
+        assert updates.call_count == 2
+        await client.on_resumed()
+        member.guild = SimpleNamespace(id=200, unavailable=False)
+        await client.on_presence_update(member, member)
+        assert updates.call_count == 2
+    finally:
+        await gateway.async_close()
+
+
+async def test_guild_outage_notifies_connection_without_user_event(hass, client):
+    gateway = DiscordGateway(hass, "test-token", "100")
+    gateway.on_member_update = MagicMock()
+    callback = gateway.on_connection_change = MagicMock()
+    try:
+        await gateway.snapshot(["1"])
+        callback.reset_mock()
+        await client.on_guild_unavailable(SimpleNamespace(id=200))
+        callback.assert_not_called()
+        await client.on_guild_unavailable(SimpleNamespace(id=100))
+        callback.assert_called_once_with(False)
+        await client.on_guild_available(SimpleNamespace(id=100))
+        assert callback.call_args.args == (True,)
+        gateway.on_member_update.assert_not_called()
     finally:
         await gateway.async_close()

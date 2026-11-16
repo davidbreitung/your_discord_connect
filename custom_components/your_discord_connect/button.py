@@ -3,9 +3,14 @@
 from homeassistant.components.button import ButtonEntity
 from homeassistant.exceptions import HomeAssistantError
 
+from .groups import central_device_info
+
 
 async def async_setup_entry(hass, entry, async_add_entities):
-    async_add_entities([DiscordSyncButton(entry.runtime_data, entry.title)])
+    async_add_entities(
+        [DiscordSyncButton(entry.runtime_data)],
+        config_subentry_id=entry.runtime_data.groups["central"],
+    )
 
 
 class DiscordSyncButton(ButtonEntity):
@@ -15,10 +20,10 @@ class DiscordSyncButton(ButtonEntity):
     _attr_has_entity_name = True
     _attr_icon = "mdi:sync"
 
-    def __init__(self, coordinator, title):
+    def __init__(self, coordinator):
         self.coordinator = coordinator
         self._attr_unique_id = f"{coordinator.guild_id}_sync"
-        self._attr_translation_placeholders = {"server": title}
+        self._attr_device_info = central_device_info(coordinator.guild_id)
 
     async def async_press(self) -> None:
         await self.coordinator.async_request_refresh()

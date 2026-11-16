@@ -1,0 +1,19 @@
+send_direct_message:
+  name: Send direct message
+  description: Send text to a member device using its configured Discord bot.
+  fields:
+    device_id:
+      name: Member device
+      description: Select a member device, not the central configuration device.
+      required: true
+      selector:
+        device:
+          integration: your_discord_connect
+          model: Benutzer
+    content:
+      name: Message
+      description: Text containing 1 to 2000 characters. Mention notifications are disabled.
+      required: true
+      selector:
+        text:
+          multiline: true

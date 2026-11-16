@@ -1,7 +1,7 @@
 """Fetch complete member snapshots at the configured interval."""
 
 import logging
-from dataclasses import replace
+from dataclasses import asdict, replace
 from datetime import timedelta
 
 from homeassistant.config_entries import ConfigEntry
@@ -13,9 +13,18 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
+from .activity import ActivityTracker
 from .api import DiscordAuthError, DiscordClient, DiscordError, Member
-from .const import CONF_GUILD_ID, CONF_SYNC_INTERVAL, DEFAULT_SYNC_INTERVAL, DOMAIN
+from .const import (
+    CONF_GUILD_ID,
+    CONF_SYNC_INTERVAL,
+    DEFAULT_SYNC_INTERVAL,
+    DOMAIN,
+    MEMBER_BINARY_KEYS,
+    MEMBER_SENSOR_KEYS,
+)
 from .gateway import DiscordGateway
+from .groups import CENTRAL_KEYS
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -37,28 +46,61 @@ class DiscordCoordinator(DataUpdateCoordinator[dict[str, Member]]):
         self.client = DiscordClient(async_get_clientsession(hass), entry.data[CONF_TOKEN])
         self.gateway = DiscordGateway(hass, entry.data[CONF_TOKEN], self.guild_id)
         self.entry_id = entry.entry_id
+        self.activity = ActivityTracker(hass, self.guild_id)
+        self._syncing = False
+        self._pending_updates = {}
+        self.gateway.on_member_update = self._handle_gateway_update
+        self.gateway.on_connection_change = self._handle_connection_change
+
+    def _handle_gateway_update(self, member_id, state):
+        if self.data is None or member_id not in self.data:
+            return  # New members are discovered by the full membership sync.
+        member = self.activity.observe(replace(self.data[member_id], **asdict(state)))
+        self.data = {**self.data, member_id: member}
+        if self._syncing:
+            self._pending_updates[member_id] = state
+        self.activity.schedule_save()
+        # Unlike async_set_updated_data this does not restart the polling timer.
+        self.async_update_listeners()
+
+    def _handle_connection_change(self, connected):
+        if self.data is None:
+            return
+        if not connected:
+            self.async_set_update_error(UpdateFailed("Discord gateway disconnected"))
+        elif not self._syncing:
+            self.hass.async_create_task(self.async_request_refresh())
+
+    async def async_close(self):
+        await self.gateway.async_close()
+        await self.activity.close()
 
     async def _async_update_data(self) -> dict[str, Member]:
+        self._syncing = True
+        self._pending_updates = {}
         try:
+            await self.activity.load()
             members = await self.client.members(self.guild_id)
             states = await self.gateway.snapshot(list(members))
+            states = {**states, **self._pending_updates}
             snapshot = {
-                member_id: replace(
-                    member,
-                    presence=state.presence,
-                    in_voice_channel=state.in_voice_channel,
-                    voice_channel=state.voice_channel,
+                member_id: self.activity.observe(
+                    replace(member, **asdict(state)) if (state := states.get(member_id)) else member
                 )
-                if (state := states.get(member_id))
-                else member
                 for member_id, member in members.items()
             }
+            self.activity.records = {
+                key: value for key, value in self.activity.records.items() if key in members
+            }
+            self.activity.schedule_save()
             self._reconcile_registry(snapshot)
             return snapshot
         except DiscordAuthError as err:
             raise ConfigEntryAuthFailed("Discord bot token is no longer valid") from err
         except DiscordError as err:
             raise UpdateFailed(str(err) or "Discord member synchronization failed") from err
+        finally:
+            self._syncing = False
 
     def _reconcile_registry(self, members: dict[str, Member]) -> None:
         """Clean up all member platforms only after both sources succeeded."""
@@ -66,8 +108,10 @@ class DiscordCoordinator(DataUpdateCoordinator[dict[str, Member]]):
         entities = er.async_get(self.hass)
         prefix = f"{self.guild_id}_"
         valid_ids = {f"{prefix}{member_id}" for member_id in members}
-        keys = ("display_name", "username", "presence", "voice_channel", "in_voice_channel")
+        keys = (*MEMBER_SENSOR_KEYS, *MEMBER_BINARY_KEYS)
         valid_entities = {f"{identifier}_{key}" for identifier in valid_ids for key in keys}
+        valid_entities.update(f"{self.guild_id}_{key}" for key in CENTRAL_KEYS)
+        valid_ids.add(f"{self.guild_id}_central")
         for entity in er.async_entries_for_config_entry(entities, self.entry_id):
             if (
                 entity.platform == DOMAIN

@@ -41,7 +41,7 @@
     "step": {
       "init": {
         "title": "Member synchronization",
-        "description": "Interval for all members of this server. Changes trigger an immediate synchronization. Default: 15 minutes.",
+        "description": "Interval for all members of this server. Changes trigger an immediate synchronization. Default: 30 minutes.",
         "data": {
           "sync_interval": "Synchronization interval (minutes)"
         }
@@ -70,16 +70,82 @@
       },
       "voice_channel": {
         "name": "Voice channel"
+      },
+      "member_count": {
+        "name": "All members"
+      },
+      "online_count": {
+        "name": "Online users"
+      },
+      "voice_count": {
+        "name": "Users in channels"
+      },
+      "last_present": {
+        "name": "Last observed present"
+      },
+      "last_absent": {
+        "name": "Last observed absent"
+      },
+      "last_gateway_event": {
+        "name": "Last gateway event"
       }
     },
     "binary_sensor": {
       "in_voice_channel": {
         "name": "In voice channel"
+      },
+      "speaker_muted": {
+        "name": "Speaker muted"
+      },
+      "microphone_muted": {
+        "name": "Microphone muted"
+      },
+      "in_afk_channel": {
+        "name": "In AFK channel"
       }
     },
     "button": {
       "sync": {
-        "name": "Synchronize {server}"
+        "name": "Synchronize users now"
+      }
+    }
+  },
+  "exceptions": {
+    "invalid_message": {
+      "message": "The message must contain 1 to 2000 characters and cannot be blank."
+    },
+    "invalid_recipient": {
+      "message": "Select an existing Discord member device, not a central configuration device."
+    },
+    "entry_not_ready": {
+      "message": "The selected Discord integration entry is not loaded."
+    },
+    "dm_invalid_auth": {
+      "message": "The bot token is invalid. Authenticate the integration again."
+    },
+    "dm_forbidden": {
+      "message": "Discord denied the direct message. The member may block DMs or the bot."
+    },
+    "dm_rate_limited": {
+      "message": "Discord is rate limiting requests. No automatic resend will occur."
+    },
+    "dm_failed": {
+      "message": "The Discord request failed. Delivery may be uncertain; no automatic resend will occur."
+    }
+  },
+  "services": {
+    "send_direct_message": {
+      "name": "Send direct message",
+      "description": "Send text to an existing member device using its configured bot.",
+      "fields": {
+        "device_id": {
+          "name": "Member device",
+          "description": "Select a member device."
+        },
+        "content": {
+          "name": "Message",
+          "description": "1 to 2000 characters; mention notifications are disabled."
+        }
       }
     }
   }

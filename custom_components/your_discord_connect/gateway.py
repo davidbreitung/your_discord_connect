@@ -2,20 +2,26 @@
 
 import asyncio
 from dataclasses import dataclass
+from datetime import datetime
 
 import discord
 from homeassistant.core import HomeAssistant
+from homeassistant.util import dt as dt_util
 
 from .api import DiscordAuthError, DiscordError, DiscordPermissionError
 
 
 @dataclass(frozen=True)
 class MemberState:
-    """Values captured at synchronization time, not live entity updates."""
+    """Immutable state from a full query or a received gateway event."""
 
     presence: str
     in_voice_channel: bool
     voice_channel: str | None
+    speaker_muted: bool | None = None
+    microphone_muted: bool | None = None
+    in_afk_channel: bool | None = None
+    last_gateway_event: datetime | None = None
 
 
 class DiscordGateway:
@@ -34,18 +40,72 @@ class DiscordGateway:
         self._ready = asyncio.Event()
         self._task: asyncio.Task | None = None
         self._error: DiscordError | None = None
+        self.on_member_update = None
+        self.on_connection_change = None
 
         @self._client.event
         async def on_ready():
             self._ready.set()
+            if self.on_connection_change:
+                self.on_connection_change(True)
 
         @self._client.event
         async def on_resumed():
             self._ready.set()
+            if self.on_connection_change:
+                self.on_connection_change(True)
 
         @self._client.event
         async def on_disconnect():
             self._ready.clear()
+            if self.on_connection_change:
+                self.on_connection_change(False)
+
+        @self._client.event
+        async def on_presence_update(before, after):
+            self._publish(after, after.voice)
+
+        @self._client.event
+        async def on_voice_state_update(member, before, after):
+            self._publish(member, after)
+
+        @self._client.event
+        async def on_guild_unavailable(guild):
+            if guild.id == self._guild_id and self.on_connection_change:
+                self.on_connection_change(False)
+
+        @self._client.event
+        async def on_guild_available(guild):
+            if guild.id == self._guild_id and self.on_connection_change:
+                self.on_connection_change(True)
+
+    def _state(self, member, voice, *, event_time=None):
+        channel = voice.channel if voice else None
+        afk = getattr(member.guild, "afk_channel", None)
+        return MemberState(
+            presence=str(member.status),
+            in_voice_channel=voice is not None,
+            voice_channel=channel.name if channel else None,
+            speaker_muted=bool(voice and (voice.self_deaf or voice.deaf)),
+            microphone_muted=bool(voice and (voice.self_mute or voice.mute)),
+            in_afk_channel=((channel.id == afk.id) if channel else None)
+            if voice and afk
+            else False,
+            last_gateway_event=event_time,
+        )
+
+    def _publish(self, member, voice):
+        if (
+            member.guild.id != self._guild_id
+            or member.guild.unavailable
+            or not self._ready.is_set()
+            or not self._client.is_ready()
+        ):
+            return
+        if self.on_member_update:
+            self.on_member_update(
+                str(member.id), self._state(member, voice, event_time=dt_util.utcnow())
+            )
 
     async def _run(self) -> None:
         try:
@@ -63,6 +123,8 @@ class DiscordGateway:
             self._error = DiscordError("Discord gateway connection failed; reload the integration")
         finally:
             self._ready.set()
+            if self.on_connection_change:
+                self.on_connection_change(False)
 
     async def snapshot(self, member_ids: list[str]) -> dict[str, MemberState]:
         if self._task is None:
@@ -92,13 +154,7 @@ class DiscordGateway:
                     cache=True,
                 )
                 for member in members:
-                    voice = member.voice
-                    channel = voice.channel if voice else None
-                    result[str(member.id)] = MemberState(
-                        presence=str(member.status),
-                        in_voice_channel=voice is not None,
-                        voice_channel=channel.name if channel else None,
-                    )
+                    result[str(member.id)] = self._state(member, member.voice)
         except (discord.DiscordException, TimeoutError) as err:
             raise DiscordError("Cannot synchronize Discord presence and voice states") from err
         if not self._client.is_ready() or not self._ready.is_set() or guild.unavailable:
@@ -106,6 +162,8 @@ class DiscordGateway:
         return result
 
     async def async_close(self) -> None:
+        self.on_member_update = None
+        self.on_connection_change = None
         await self._client.close()
         if self._task is not None:
             self._task.cancel()
