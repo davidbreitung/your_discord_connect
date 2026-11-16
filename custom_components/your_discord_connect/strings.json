@@ -1,0 +1,61 @@
+{
+  "title": "Your Discord Connect",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect Discord bot",
+        "description": "Create a bot in the Discord Developer Portal, enable Server Members Intent and invite it to your server (bot scope; no administrator permission needed). Paste the bot token here. See the repository documentation for all steps.",
+        "data": {
+          "token": "Bot token"
+        }
+      },
+      "guild": {
+        "title": "Choose Discord server",
+        "description": "Choose a server the bot has joined. Member access will be checked automatically.",
+        "data": {
+          "guild_id": "Discord server"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Update Discord bot token",
+        "description": "The saved token is no longer valid. Enter a valid bot token with access to the same server.",
+        "data": {
+          "token": "Bot token"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "The bot token is invalid. Use a bot token, not a user token or client secret.",
+      "cannot_connect": "Cannot reach Discord. Check your Internet connection and try again.",
+      "missing_permissions": "Discord denied access. Enable Server Members Intent in the bot settings and ensure the bot is a member of this server.",
+      "server_not_found": "The server is no longer accessible to this bot.",
+      "rate_limited": "Discord is limiting requests. Wait before trying again.",
+      "no_servers": "The bot has not joined any servers. Invite it to your server, then submit the token again."
+    },
+    "abort": {
+      "already_configured": "This Discord server is already configured.",
+      "reauth_successful": "The bot token was updated successfully."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Member synchronization",
+        "description": "Interval for all members of this server. Changes trigger an immediate synchronization. Default: 15 minutes.",
+        "data": {
+          "sync_interval": "Synchronization interval (minutes)"
+        }
+      }
+    },
+    "error": {
+      "invalid_interval": "Enter a whole number between 1 and 1440 minutes."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "display_name": {
+        "name": "Display name"
+      }
+    }
+  }
+}

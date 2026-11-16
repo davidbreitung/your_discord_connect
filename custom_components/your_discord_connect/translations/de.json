@@ -1,0 +1,61 @@
+{
+  "title": "Your Discord Connect",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Discord-Bot verbinden",
+        "description": "Erstelle einen Bot im Discord Developer Portal, aktiviere den Server Members Intent und lade ihn auf Deinen Server ein (Scope bot; keine Administratorrechte nötig). Gib hier das Bot-Token ein. Die vollständige Anleitung steht in der Repository-Dokumentation.",
+        "data": {
+          "token": "Bot-Token"
+        }
+      },
+      "guild": {
+        "title": "Discord-Server auswählen",
+        "description": "Wähle einen Server, dem der Bot beigetreten ist. Der Mitgliederzugriff wird automatisch geprüft.",
+        "data": {
+          "guild_id": "Discord-Server"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Discord-Bot-Token erneuern",
+        "description": "Das gespeicherte Token ist nicht mehr gültig. Gib ein gültiges Bot-Token mit Zugriff auf denselben Server ein.",
+        "data": {
+          "token": "Bot-Token"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Das Bot-Token ist ungültig. Verwende ein Bot-Token, kein Benutzer-Token oder Client Secret.",
+      "cannot_connect": "Discord ist nicht erreichbar. Prüfe die Internetverbindung und versuche es erneut.",
+      "missing_permissions": "Discord verweigert den Zugriff. Aktiviere Server Members Intent in den Bot-Einstellungen und prüfe, ob der Bot Mitglied dieses Servers ist.",
+      "server_not_found": "Der Server ist für diesen Bot nicht mehr erreichbar.",
+      "rate_limited": "Discord begrenzt die Anfragen. Warte etwas und versuche es erneut.",
+      "no_servers": "Der Bot ist noch keinem Server beigetreten. Lade ihn auf Deinen Server ein und sende das Token erneut ab."
+    },
+    "abort": {
+      "already_configured": "Dieser Discord-Server ist bereits eingerichtet.",
+      "reauth_successful": "Das Bot-Token wurde erfolgreich aktualisiert."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Mitglieder synchronisieren",
+        "description": "Intervall für alle Mitglieder dieses Servers. Änderungen lösen sofort einen Abgleich aus. Standard: 15 Minuten.",
+        "data": {
+          "sync_interval": "Synchronisationsintervall (Minuten)"
+        }
+      }
+    },
+    "error": {
+      "invalid_interval": "Gib eine ganze Zahl zwischen 1 und 1440 Minuten ein."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "display_name": {
+        "name": "Anzeigename"
+      }
+    }
+  }
+}
