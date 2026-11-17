@@ -93,8 +93,10 @@ den normalen HA-Geräteselektor mit Integration `your_discord_connect` und Model
 - Pro Aufruf wird genau ein Empfänger adressiert. Keine impliziten Rundnachrichten,
   Hintergrundnachrichten oder Nachrichten beim Einrichten der Integration.
 
-Die Integration speichert die Nachricht nicht in eigenen Zustandsentitäten oder
-eigenen Protokollen. Home-Assistant-Automations-Traces können Aktionsdaten enthalten;
+Die Aktion selbst legt den Nachrichtentext nicht als eigenen HA-Zustand oder
+eigenen Protokolleintrag ab. Das separate Benutzer-Textfeld ab 1.0.0 ist dagegen
+ein regulärer HA-Zustand und kann im Recorder erscheinen (siehe [Dashboard-Anleitung](dashboard.md)).
+Home-Assistant-Automations-Traces können Aktionsdaten enthalten;
 der aufrufende Dienst sollte entsprechend mit vertraulichen Texten umgehen.
 
 ## Beobachten von Benutzerzuständen

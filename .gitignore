@@ -8,3 +8,12 @@ htmlcov/
 *.egg-info/
 node_modules/
 test-results/
+
+# Local credentials, Home Assistant storage and Codex machine/session data
+.env
+.env.*
+!.env.example
+!.env.sample
+secrets.yaml
+.storage/
+.codex/

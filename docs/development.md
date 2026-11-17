@@ -1,5 +1,10 @@
 # Entwicklung
 
+Für Windows-/WSL-Einrichtung und Rechnerwechsel siehe [WINDOWS.md](WINDOWS.md).
+Neue Codex-Sitzungen beginnen mit [AGENTS.md](../AGENTS.md) und
+[HANDOVER.md](HANDOVER.md); die aktuelle Gesamtarchitektur steht in
+[ARCHITECTURE.md](ARCHITECTURE.md).
+
 ## Umgebung
 
 Python **3.14.2+** und [uv](https://docs.astral.sh/uv/) verwenden:
@@ -63,7 +68,8 @@ Abruf aller REST-Seiten und erfolgreichem Gateway-Snapshot. Teilfehler dürfen k
 den Durchlauf ohne sofortige Wiederholungsschleife; der nächste geplante Abgleich
 versucht es erneut. HTTP 401 löst eine erneute Anmeldung aus.
 
-Private Textnachrichten werden nur über explizite Service-/API-Aufrufe gesendet. Ziele sind `https://discord.com/api/v10`
+Private Textnachrichten werden nur über explizite Service-/API-Aufrufe oder den
+Sendebutton eines Benutzergeräts gesendet. Ziele sind `https://discord.com/api/v10`
 und die von Discord gelieferten Gateway-/Resume-Adressen unter `discord.gg` (WSS).
 Gateway-Intents: guilds, members, presences und voice_states; keine Nachrichtenintents.
 
@@ -83,8 +89,9 @@ Neue Unique-ID-Suffixe: `username`, `presence`, `in_voice_channel`, `voice_chann
 Die bisherigen IDs und Geräte bleiben erhalten. Der Button hat `<server_id>_sync`
 und wird dem Gerät `<server_id>_central` in der Untergruppe `central` zugeordnet.
 Mitgliedsgeräte gehören zur Untergruppe `users` und verwenden `via_device_id` zur Zentrale.
-Registry-Bereinigung erfolgt zentral für beide Mitgliederplattformen und lässt
- den Button und zentrale Zähler bestehen.
+Registry-Bereinigung entfernt veraltete Mitglieder-Sensoren und -Binärsensoren
+explizit sowie ausgetretene Geräte einschließlich ihrer Entitäten. Zentrale/Bot-Geräte
+bleiben erhalten. Benutzergeräte besitzen zusätzlich DM-Text und -Button.
 
 ## Ereignisverarbeitung und Beobachtungszeitpunkte
 
@@ -119,11 +126,13 @@ Identität aus den Benutzergeräten ausgefiltert; die Coordinator-Mitgliederlist
 Zähler bleiben vollständig. Das neue Gerätekennzeichen ist `<guild_id>_bot`, dessen
 Entitäten heißen `<guild_id>_bot_channel`, `<guild_id>_tts_message` und
 `<guild_id>_tts_execute`. Beim Upgrade werden frühere Mitgliederentitäten des eigenen
-Bots bereinigt. Alle drei Steuerelemente gehören zur Untergruppe `central`.
+Bots bereinigt. Zusätzlich gehören `<guild_id>_playback_status` und `<guild_id>_volume` zur
+Untergruppe `central`; insgesamt fünf Bot-Entitäten.
 
 `guild.fetch_channels()` läuft bei jedem vollständigen Mitgliederabgleich. Die Liste
-enthält Voice- und Stage-Kanäle, keine Textkanäle. Gateway-Kanalereignisse aktualisieren
-sie zusätzlich. Eine Revisionsnummer verhindert, dass eine ältere HTTP-Antwort ein
+enthält inzwischen auch Kategorien und Textkanäle für die Dashboard-Karten.
+Die Bot-Kanalauswahl filtert daraus nur Voice-/Stage-Kanäle. Gateway-Kanalereignisse
+aktualisieren die Liste zusätzlich. Eine Revisionsnummer verhindert, dass eine ältere HTTP-Antwort ein
 zwischenzeitlich empfangenes Kanalereignis überschreibt. Die Auswahl wird anhand der
 Kanal-ID ausgewertet, nicht aus einem möglicherweise doppelt vergebenen Namen.
 
@@ -136,7 +145,8 @@ verwenden den vorhandenen HA-TTS-Unterbau; keine zweite TTS-Anmeldung und keine
 
 FFmpeg liest ausschließlich generierte Audiodaten aus einer Pipe; die Protokolle
 sind auf `pipe,fd` eingeschränkt. Prozessstart läuft im Executor. Discords Audio-Thread
-liest Opus-Pakete und übernimmt nach `play` die Source-Bereinigung. Der Completion-
+liest PCM-Daten über den Lautstärketransformer, kodiert sie mit libopus und
+übernimmt nach `play` die Source-Bereinigung. Der Completion-
 Callback wechselt threadsicher zurück in den HA-Event-Loop. Abbruch während des
 Prozessstarts bereinigt die Source nach Abschluss des Executor-Jobs. Text maximal
 255 Zeichen, Generierung maximal 60 Sekunden, Audiodaten maximal 10 MiB, Wiedergabe

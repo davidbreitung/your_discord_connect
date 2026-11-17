@@ -100,6 +100,8 @@ verhindern, zeigt dieser unbekannt statt einer irreführenden Teilanzahl.
 | Zuletzt anwesend erkannt | Letzte beobachtete erste Anwesenheit oder Wechsel zu anwesend (Presence sichtbar oder Sprachverbindung). |
 | Zuletzt nicht anwesend erkannt | Letzte beobachtete erste Abwesenheit oder Wechsel zu offline ohne Sprachverbindung. |
 | Letztes Gateway-Ereignis | Lokaler Empfangszeitpunkt des letzten Presence-/Sprachstatusereignisses für dieses Mitglied. |
+| Private Nachricht | Entwurf für eine Direktnachricht (maximal 255 Zeichen). |
+| Private Nachricht senden | Sendet den Entwurf ausdrücklich als Bot an dieses Mitglied. |
 
 ## Sofortige Aktualisierung und manueller Abgleich
 
@@ -183,7 +185,17 @@ können durch den Recorder historisiert werden. Bei Bedarf die Entitäten in der
 
 Das Bot-Token wird in der lokalen Home-Assistant-Konfiguration gespeichert.
 Backups schützen und Tokens niemals in Git, Screenshots, Issues oder Chats teilen.
-Administratorrechte und Message Content Intent sind nicht nötig.
+Administratorrechte sind nicht nötig. Der optionale Textkanal-Feed benötigt
+zusätzlich den Message Content Intent und das Recht zum Lesen des Nachrichtenverlaufs.
+
+## Weiterarbeit mit Codex auf mehreren Rechnern
+
+[Windows-/WSL-Einrichtung und Git-Synchronisierung](docs/WINDOWS.md) beschreiben
+Clone, lokale Voraussetzungen und den Wechsel zwischen Rechnern. Für eine neue
+Codex-Sitzung mit [AGENTS.md](AGENTS.md) und der [Übergabe](docs/HANDOVER.md) starten.
+[Architektur](docs/ARCHITECTURE.md), [Entscheidungen](docs/DECISIONS.md),
+[Status](docs/STATUS.md) und [Aufgaben](docs/TODO.md) bewahren das Projektwissen.
+Dies ersetzt keine vollständige Synchronisierung lokaler Codex-Unterhaltungen.
 
 ## Hilfe und Entwicklung
 
