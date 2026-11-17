@@ -1,0 +1,32 @@
+name: Documentation consistency
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  documentation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Verify required documents
+        run: |
+          for f in AGENTS.md REQUIREMENTS.md STATUS.md README.md docs/USER_MANUAL.md docs/ADMIN_MANUAL.md docs/STATUS.md docs/TODO.md; do
+            test -s "$f" || { echo "Missing or empty: $f"; exit 1; }
+          done
+      - name: Require status update with integration changes
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          changed="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA")"
+          if printf '%s\n' "$changed" | grep -q '^custom_components/'; then
+            printf '%s\n' "$changed" | grep -qx 'STATUS.md' || { echo 'Update STATUS.md when integration code changes'; exit 1; }
+            if ! printf '%s\n' "$changed" | grep -Eq '^docs/(USER_MANUAL|ADMIN_MANUAL)\.md$'; then
+              echo 'Manuals unchanged: explain in STATUS.md why neither manual needed updating'
+            fi
+          fi
