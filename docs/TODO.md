@@ -6,6 +6,14 @@ Keine erfundenen Termine, Verantwortlichen oder Fehlerberichte.
 
 ## P1 – Übergabe und reale Bestätigung
 
+- [ ] **Aktuell: TTS ohne hörbaren Ton trotz Sprechring untersuchen.** Benutzer
+  meldet übrige Funktionen allgemein als funktionierend. Cloud-TTS mit hörbarer
+  Vorschau, passende Lautstärke und normaler Sprachkanal sind inzwischen bestätigt.
+  Status kehrt auf Bereit zurück, erneuter Beitritt hilft nicht. Diagnose in HA
+  anhand Frame-/Pegelwerten fortsetzen; konkrete Fehlertexte fehlen bislang. Lokale
+  Decoderfehler-/Pegel-Diagnose vorbereitet; reale Ursache und erfolgreicher
+  Hörtest weiterhin offen. Keine spekulative Änderung von Voice-Verschlüsselung.
+
 - [ ] Zweiten Windows-Rechner nach [WINDOWS.md](WINDOWS.md) einrichten; Checkout,
   Login, Branch, WSL-/Toolversionen und Einstieg mit `HANDOVER.md` bestätigen.
   Fertig: A/B zeigen denselben Commit, passende Tests lassen sich dort starten.

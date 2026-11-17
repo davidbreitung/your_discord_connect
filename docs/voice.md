@@ -152,3 +152,40 @@ Queue/Abbruch, Rechtefehler, den HA-TTS-Aufruf und die tatsächliche WAV-zu-Opus
 Verarbeitung mit FFmpeg. Discord-Verbindungen und TTS-Anbieter werden simuliert.
 Ein vollständiger Hörtest mit echtem Bot, Voice-Netzwerk und Deiner HA-TTS-Stimme
 steht noch aus.
+
+## Fehlersuche: grüner Sprechring, aber kein Ton
+
+Der grüne Discord-Ring bestätigt die Sprechsignalisierung, nicht die hörbare
+Audioübertragung. Zuerst die Entität **Lautstärke** (z. B. 50 %), die lokale
+Discord-Benutzerlautstärke des Bots sowie Stummschaltung/Deafen beim Zuhörer prüfen.
+Danach die Vorschau des verwendeten TTS-Anbieters in Home Assistant abspielen.
+Bei Stage-Kanälen außerdem die Sprecherfreigabe prüfen. Kanal einmal über
+**alle verlassen** verlassen und erneut auswählen; keine laufende Durchsage dabei.
+
+Die ergänzte Audio-Diagnose im aktuellen main-Stand ergänzt am **Wiedergabestatus**
+nach einem Durchsageversuch zwei Attribute:
+
+- `last_audio_frames`: gelesene 20-ms-PCM-Blöcke; 50 entsprechen etwa einer Sekunde.
+- `last_audio_peak`: größter absoluter 16-Bit-PCM-Samplewert **nach** Lautstärkeregelung
+  (0–32768). 0 bedeutet digitale Stille, z. B. durch Lautstärke 0 oder stumme TTS-Daten.
+
+Die Attribute sind vor dem nächsten Audio-Lauf unbekannt und werden beim Start
+eines Auftrags zurückgesetzt. Sie enthalten weder Nachrichtentext noch Audio.
+Gelesene Blöcke/Peak > 0 belegen nur den lokalen PCM-Pfad, nicht erfolgreiche
+UDP-Übertragung, DAVE-Entschlüsselung oder Wiedergabe beim Zuhörer.
+
+Ein FFmpeg-Fehler oder eine Quelle ohne vollständige PCM-Blöcke wird mit dieser
+Diagnose als Dekodierungsfehler gemeldet, statt hinter dem Lautstärke-Wrapper als
+normales Ende zu erscheinen. Ein stilles, aber gültiges Audiosignal wird nicht als
+Decoderfehler eingestuft. Optionales Debug-Logging ausschließlich für
+`custom_components.your_discord_connect.voice` protokolliert Blockzahl, Peak und
+Lautstärke; keine umfassenden Discord-Handshake-/Token-Logs weitergeben.
+
+Für einen Fehlerbericht genügen TTS-Anbieter, Ergebnis seiner HA-Vorschau,
+Bot-Lautstärke, normaler Sprachkanal/Stage und die Fehlermeldung bzw. nach Installation
+dieser Diagnose die beiden Attribute. Keine Tokens oder privaten Nachrichten senden.
+
+Home Assistant Cloud wird von der geprüften HA-Standard-Engine-Auswahl bevorzugt.
+Sein Streaming-WAV-Format (WAV-Header mit zunächst null Frames, danach PCM-Daten)
+ist ebenfalls im lokalen Audiotest enthalten. Ein bestandener Format-Test oder
+eine hörbare HA-Vorschau beweist dennoch keine erfolgreiche Discord-Übertragung.

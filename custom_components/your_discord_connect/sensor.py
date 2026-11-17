@@ -57,7 +57,12 @@ class BotPlaybackSensor(BotEntity, SensorEntity):
 
     @property
     def extra_state_attributes(self):
-        return {"queued_announcements": self.coordinator.voice.queued_announcements}
+        voice = self.coordinator.voice
+        return {
+            "queued_announcements": voice.queued_announcements,
+            "last_audio_frames": voice.last_audio_frames,
+            "last_audio_peak": voice.last_audio_peak,
+        }
 
 
 class DiscordCountSensor(CoordinatorEntity, SensorEntity):

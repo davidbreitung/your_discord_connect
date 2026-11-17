@@ -1,8 +1,10 @@
 # Aktueller Entwicklungsstand
 
-Stand: **17.11.2026**. Implementierte Version **1.0.1**. Letzter Funktionscommit:
+Stand: **17.11.2026**. Implementierte Version **1.0.1**. Basiscommit vor der Audio-Diagnose:
 [`f1e59cc`](https://github.com/davidbreitung/your_discord_connect/commit/f1e59cc).
-Diese Dokumentationsänderung verändert keine Laufzeitfunktion und keine Version.
+Die Audio-Diagnose ist als nachfolgende Änderung enthalten; die Manifest-Version
+bleibt 1.0.1. Für diese Diagnose den aktuellen main-Stand erneut herunterladen
+und Home Assistant neu starten. Die reale Fehlerursache bleibt offen.
 
 ## Bestätigter Repository-Stand
 
@@ -65,9 +67,9 @@ keine in dieser Cloud-Umgebung verifizierte Installation.
 
 ## Aktuelle Aufgabe
 
-Projektwissen und sicheren A/B-Rechnerwechsel dokumentieren, ausschliesslich
-Dokumentation/Git-Ausschlüsse ändern. Danach zuerst den zweiten Checkout einrichten
-und 1.0.1 im echten Dashboard bestätigen. Prioritäten: [TODO.md](TODO.md).
+Lautlose TTS-Ausgabe trotz grünem Discord-Sprechring untersuchen. Der Benutzer
+meldet allgemein, dass der übrige Funktionsumfang funktioniert; eine detaillierte
+Einzelabnahme ist damit nicht dokumentiert. Prioritäten: [TODO.md](TODO.md).
 
 ## Dokumentationsprüfung dieser Übergabe
 
@@ -83,3 +85,26 @@ geprüfte Beispiel-Env-Dateien bleiben versionierbar.
 Da nur Dokumentation und Git-Ausschlüsse geändert wurden, wurden die bereits
 belegten Funktionstests in dieser Aufgabe nicht erneut ausgeführt. Laufzeitcode,
 Produktionsdienste, installierte HA-Konfiguration und Codex-Sitzungsdaten blieben unverändert.
+
+## Neue Audiomeldung und lokale Untersuchung (17.11.2026)
+
+Benutzer: „Es funktioniert alles“, aber bei TTS kein hörbarer Ton im Kanal trotz
+Sprechring. Nachgereichte Benutzerangaben: **Home Assistant Cloud**, dessen Vorschau ist
+hörbar, Lautstärke passt, normaler Sprachkanal (kein Stage). Weitere Benutzerbestätigung: Der Status kehrt auf **Bereit** zurück; auch nach
+Verlassen/erneutem Beitritt bleibt die Ausgabe stumm. Konkrete Fehlertexte liegen
+nicht vor (das ist keine Bestätigung, dass das Protokoll leer ist). Reale Ursache
+weiterhin offen; als Nächstes lokale Audioframes/Peak in der Zielinstallation prüfen.
+
+Lokaler synthetischer 440-Hz-Test: WAV/MP3 und das Cloud-Streaming-WAV-Format werden im vorhandenen Pfad zu nicht-stummen
+PCM- und rückdekodierten Opus-Daten. Das reproduziert keine allgemeine Stummschaltung
+im Audio-Encoder. Es belegt nicht die Ursache im realen System.
+
+Separat bestätigte Lücke: PCMVolumeTransformer reicht FFmpegs `_current_error`
+nicht an AudioPlayer weiter; bisherige native Tests verwendeten ausschließlich
+Stille. Lokal ergänzt: geprüfter Wrapper mit Fehlererkennung und Frames/Peak als
+Diagnoseattribute, Tests mit nicht-stummem Signal, 0/50/100 % Lautstärke und Opus-
+Rückdekodierung. Die Ursache des Benutzerfalls bleibt offen, nicht als gelöst melden.
+
+Prüfung der ersten lokalen Audio-Diagnose: **103 Python-Tests erfolgreich**, Ruff
+und Formatprüfung erfolgreich. Nach Cloud-Format-Ergänzung: **24 gezielte Voice-Tests erfolgreich**, ebenfalls
+Ruff/Format erfolgreich. Kein echter Discord-Hörtest durchgeführt.

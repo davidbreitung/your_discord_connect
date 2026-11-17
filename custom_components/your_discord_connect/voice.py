@@ -3,10 +3,12 @@
 import asyncio
 import ctypes.util
 import io
+import logging
 import math
 import os
 from functools import partial
 
+import audioop
 import discord
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.storage import Store
@@ -18,6 +20,7 @@ MAX_TEXT_LENGTH = 255
 MAX_QUEUE = 5
 DEFAULT_VOLUME = 50
 PLAYBACK_STATES = ("disconnected", "idle", "preparing", "playing", "error")
+_LOGGER = logging.getLogger(__name__)
 
 
 def volume_store(hass, guild_id):
@@ -26,6 +29,30 @@ def volume_store(hass, guild_id):
 
 def voice_error(key):
     return HomeAssistantError(translation_domain=DOMAIN, translation_key=key)
+
+
+class AudioDecodeError(discord.ClientException):
+    """FFmpeg failed or produced no playable PCM frames."""
+
+
+class CheckedVolumeSource(discord.PCMVolumeTransformer):
+    """Keep decoder failures visible through the volume wrapper, without audio logs."""
+
+    def __init__(self, original, volume):
+        super().__init__(original, volume=volume)
+        self.frames_read = 0
+        self.pcm_peak = 0
+
+    def read(self):
+        data = super().read()
+        if data:
+            self.frames_read += 1
+            self.pcm_peak = max(self.pcm_peak, audioop.max(data, 2))
+        elif getattr(self.original, "_current_error", None) or not self.frames_read:
+            # AudioPlayer sees only the outer source. PCMVolumeTransformer does
+            # not forward FFmpeg's _current_error, so EOF otherwise looks successful.
+            raise AudioDecodeError("FFmpeg did not provide valid audio")
+        return data
 
 
 def make_audio_source(audio: bytes, executable: str):
@@ -47,7 +74,7 @@ def make_audio_source(audio: bytes, executable: str):
             options="-vn",
             stderr=stderr,
         )
-    return discord.PCMVolumeTransformer(source, volume=DEFAULT_VOLUME / 100)
+    return CheckedVolumeSource(source, volume=DEFAULT_VOLUME / 100)
 
 
 class BotVoice:
@@ -59,6 +86,8 @@ class BotVoice:
         self._volume_store = volume_store(hass, guild_id)
         self._phase = "idle"
         self._active_source = None
+        self.last_audio_frames = None
+        self.last_audio_peak = None
         self._listeners = set()
         self._connection_lock = asyncio.Lock()
         self._speech_lock = asyncio.Lock()
@@ -247,6 +276,8 @@ class BotVoice:
 
     async def _speak(self, text, channel_id):
         async with self._speech_lock:
+            self.last_audio_frames = None
+            self.last_audio_peak = None
             self._set_phase("preparing")
             try:
                 await self._play(text, channel_id)
@@ -279,7 +310,13 @@ class BotVoice:
         def finish(error):
             if not done.done():
                 if error:
-                    done.set_exception(voice_error("tts_playback_failed"))
+                    done.set_exception(
+                        voice_error(
+                            "tts_decode_failed"
+                            if isinstance(error, AudioDecodeError)
+                            else "tts_playback_failed"
+                        )
+                    )
                 else:
                     done.set_result(None)
 
@@ -300,6 +337,15 @@ class BotVoice:
             raise voice_error("tts_playback_failed") from err
         finally:
             self._active_source = None
+            if isinstance(source, CheckedVolumeSource):
+                self.last_audio_frames = source.frames_read
+                self.last_audio_peak = source.pcm_peak
+                _LOGGER.debug(
+                    "TTS audio: frames=%d, PCM peak=%d, volume=%d%%",
+                    source.frames_read,
+                    source.pcm_peak,
+                    self.volume,
+                )
             if started:
                 voice.stop()  # discord.py's audio thread owns source cleanup.
             else:

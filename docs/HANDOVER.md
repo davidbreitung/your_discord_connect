@@ -95,15 +95,30 @@ Frontend 20261028.5; automatisierte Testbasis ist weiterhin HA 2026.10.4.
 
 ## Was als Nächstes ansteht
 
-Die unmittelbar letzte Aufgabe war **Kontextbewahrung und geräteübergreifende
-Weiterarbeit**, keine neue Funktion. Dokumentationsdateien und Git-Ausschlüsse
-wurden dafür ergänzt. Den abschließenden Commit/Push anhand Git/Antwort prüfen;
-keine ungeprüfte Annahme über eine noch laufende Übertragung machen.
+Die Kontextdokumentation wurde in `ff2db0e` nach main gepusht. Die nun aktuelle
+Aufgabe ist die Fehlersuche **kein TTS-Ton trotz grünem Discord-Sprechring**.
+Benutzer meldet die übrigen Funktionen allgemein als funktionierend; das ist kein
+vollständiger Testbericht jedes Einzelmerkmals.
 
-Nächste sinnvolle Schritte: zweiter Rechner nach WINDOWS-Anleitung, neue Sitzung
-mit diesen Dateien starten, echte Bestätigung des Scroll-Fixes einholen und die
-offene Gesamtabnahme planen. Keine zurückgestellten Features eigenständig beginnen.
-Prüfbefehle stehen in AGENTS/development; nach reinen Docs keine unnötige Vollsuite.
+Lokaler WAV-/MP3-/Cloud-Streaming-WAV-Test mit 440-Hz-Signal liefert nicht-stumme PCM-/Opus-Daten. Eine
+allgemeine Encoder-Stummschaltung ist damit nicht reproduziert. Separat gefunden:
+Der bisherige PCMVolumeTransformer verdeckt FFmpeg-Fehler; native Tests verwendeten
+nur Stille. Die nachfolgende Audio-Diagnose ergänzt Fehlererkennung sowie
+`last_audio_frames`/`last_audio_peak` am Wiedergabestatus und aussagekräftige Tests.
+Der Benutzer hat inzwischen bestätigt: **Home Assistant Cloud**, hörbare Vorschau,
+passende Lautstärke, normaler Sprachkanal. Der Status kehrt laut Benutzer auf **Bereit** zurück; auch nach erneutem
+Kanalbeitritt bleibt die Ausgabe stumm. Reale Ursache weiterhin offen. Nächster
+Diagnoseschritt sind die neuen Frame-/Pegelwerte in der Zielinstallation; konkrete
+Fehlertexte liegen bislang nicht vor. Lokale Audio-Diagnose: **103 Python-Tests
+erfolgreich** vor Cloud-Format-Ergänzung; danach **24 gezielte Voice-Tests erfolgreich**,
+Ruff/Format erfolgreich. Nicht als behobenen Benutzerfehler
+verkaufen. Keine Tokens, Audiodaten oder Texte zur Diagnose protokollieren.
+
+Commit/Push der Diagnose wurde vom Benutzer beauftragt. Die Manifest-Version
+bleibt 1.0.1; für die Diagnose den aktuellen main-Stand erneut installieren und HA
+neu starten. Nächster Schritt: anhand der Messwerte Erzeugung,
+Dekodierung, UDP-/DAVE-Transport und Empfängerwiedergabe auseinanderhalten.
+Music Assistant und weitere zurückgestellte Features weiterhin nicht beginnen.
 
 ## Herkunft, Unsicherheiten und nicht gesicherte Informationen
 

@@ -210,6 +210,9 @@
     },
     "tts_opus_unavailable": {
       "message": "The Opus library is missing. Install libopus for audio playback."
+    },
+    "tts_decode_failed": {
+      "message": "FFmpeg could not decode the TTS audio or returned no playable audio frames. Check the TTS provider and FFmpeg installation."
     }
   },
   "services": {

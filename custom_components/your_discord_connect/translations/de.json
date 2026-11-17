@@ -210,6 +210,9 @@
     },
     "tts_opus_unavailable": {
       "message": "Die Opus-Bibliothek fehlt. Installiere libopus für die Audiowiedergabe."
+    },
+    "tts_decode_failed": {
+      "message": "FFmpeg konnte die TTS-Audiodaten nicht dekodieren oder lieferte keine abspielbaren Audioframes. Prüfe den TTS-Anbieter und die FFmpeg-Installation."
     }
   },
   "services": {

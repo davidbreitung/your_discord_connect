@@ -1,5 +1,12 @@
 # Änderungen
 
+## Unveröffentlicht – Audio-Diagnose
+
+- FFmpeg-Dekodierungsfehler und fehlende Audioframes werden durch den Lautstärke-Wrapper nicht mehr als erfolgreiches Wiedergabeende verdeckt.
+- Wiedergabestatus um lokale Audioframe-/Pegelwerte ergänzt; keine Texte oder Audiodaten protokolliert.
+- Native Audiotests verwenden ein echtes Testsignal mit WAV/MP3/Cloud-Streaming-WAV, Lautstärke 0/50/100 % und Opus-Rückdekodierung statt ausschließlich Stille.
+- Die gemeldete lautlose Ausgabe bei grünem Discord-Sprechring ist damit noch nicht als behoben bestätigt.
+
 ## 1.0.1
 
 - Text-Channel-Feed scrollt nach jeder Aktualisierung und nach dem Laden von Bildern zuverlässig zu den neuesten Nachrichten.

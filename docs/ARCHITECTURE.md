@@ -145,3 +145,11 @@ Python >=3.14.2, HA-Testbasis 2026.10.4, uv 0.13.6; Discord 2.7.1, PyNaCl 1.6.2,
 davey 0.2.0, CFFI-Constraint 2.0.0. Node 22 und Playwright 1.58.2 nur für
 Frontend-Tests. Versionsautorität sind Manifest, Projektmetadaten und Lockfiles.
 Tests und CI: [development.md](development.md); Windows/WSL: [WINDOWS.md](WINDOWS.md).
+
+## Ergänzung nach 1.0.1: Audio-Diagnose
+
+`CheckedVolumeSource` erweitert PCMVolumeTransformer um Decoderfehler-Erkennung
+und lokale Block-/Peak-Messung. Der Statussensor zeigt diese Werte nach dem Versuch;
+kein Zugriff auf Nachrichtentext oder Audioinhalt über Diagnoseattribute.
+DAVE-/UDP-Erfolg wird aus diesen Messwerten nicht abgeleitet. Das Datenmodell der
+bestehenden Geräte-/Entitäts-IDs und der verschlüsselte Versand bleiben gleich.

@@ -2,12 +2,15 @@
 
 import asyncio
 import io
+import math
 import shutil
+import struct
 import subprocess
 import wave
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, PropertyMock, patch
 
+import audioop
 import pytest
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import device_registry as dr
@@ -189,22 +192,38 @@ async def test_home_assistant_default_tts_is_used(hass, voice_env):
     get_audio.assert_awaited_once_with(hass, "media-source://tts/test")
 
 
-@pytest.mark.parametrize("audio_format", ["wav", "mp3"])
-async def test_native_ffmpeg_produces_opus_packets(hass, audio_format):
+@pytest.mark.parametrize("audio_format", ["wav", "mp3", "cloud_stream_wav"])
+@pytest.mark.parametrize("volume", [0, 0.5, 1])
+async def test_native_ffmpeg_produces_audible_opus_packets(hass, audio_format, volume):
     import discord.voice_client
 
     assert discord.voice_client.has_nacl
     assert discord.voice_client.has_dave
     assert shutil.which("ffmpeg"), "FFmpeg is required for the voice development workflow"
+    rate = 24000 if audio_format == "cloud_stream_wav" else 22050
     wav = io.BytesIO()
     with wave.open(wav, "wb") as output:
         output.setnchannels(1)
         output.setsampwidth(2)
-        output.setframerate(48000)
-        output.writeframes(b"\0\0" * 4800)
+        output.setframerate(rate)
+        output.writeframes(
+            b"".join(
+                struct.pack("<h", int(12000 * math.sin(2 * math.pi * 440 * i / rate)))
+                for i in range(rate)
+            )
+        )
 
     def encode():
         audio = wav.getvalue()
+        if audio_format == "cloud_stream_wav":
+            # HA Cloud streams one WAV header declaring zero frames, followed by PCM.
+            # Match that public format without calling the real cloud provider.
+            header = io.BytesIO()
+            with wave.open(header, "wb") as output:
+                output.setnchannels(1)
+                output.setsampwidth(2)
+                output.setframerate(rate)
+            audio = header.getvalue() + audio[44:]
         if audio_format == "mp3":
             audio = subprocess.run(
                 ["ffmpeg", "-v", "error", "-i", "pipe:0", "-f", "mp3", "pipe:1"],
@@ -214,11 +233,23 @@ async def test_native_ffmpeg_produces_opus_packets(hass, audio_format):
                 timeout=10,
             ).stdout
         source = make_audio_source(audio, "ffmpeg")
+        source.volume = volume
         try:
             encoder = discord.opus.Encoder()
+            decoder = discord.opus.Decoder()
             packets = []
+            decoded = []
             while pcm := source.read():
-                packets.append(encoder.encode(pcm, 960))
+                packet = encoder.encode(pcm, 960)
+                packets.append(packet)
+                decoded.append(decoder.decode(packet, fec=False))
+            assert source.frames_read == len(packets)
+            if volume:
+                assert 3000 * volume < audioop.rms(b"".join(decoded), 2) < 9000 * volume
+                assert 6000 * volume < source.pcm_peak < 10000 * volume
+            else:
+                assert source.pcm_peak == 0
+                assert audioop.rms(b"".join(decoded), 2) == 0
             assert not source.is_opus()
             assert len(packets) >= 5
             assert all(packets)
@@ -413,3 +444,81 @@ async def test_leave_interrupts_active_playback(voice_env):
     assert c.current_option == LEAVE_ALL
     assert not c._jobs
     assert voice_env.voice.stop.called
+
+
+async def test_invalid_audio_is_not_successful_silent_playback(hass):
+    from custom_components.your_discord_connect.voice import AudioDecodeError
+
+    def read_invalid_audio():
+        source = make_audio_source(b"not a decodable audio file", "ffmpeg")
+        try:
+            with pytest.raises(AudioDecodeError):
+                source.read()
+            assert source.frames_read == 0
+            assert source.pcm_peak == 0
+        finally:
+            source.cleanup()
+
+    await hass.async_add_executor_job(read_invalid_audio)
+
+
+async def test_decode_error_and_audio_diagnostics_reach_ha(voice_env):
+    import discord
+
+    from custom_components.your_discord_connect.voice import AudioDecodeError, CheckedVolumeSource
+
+    class BrokenPCM(discord.AudioSource):
+        def read(self):
+            return b""
+
+    c = voice_env.controller
+    await c.select("General (10)")
+    c.set_text("Test announcement")
+    source = CheckedVolumeSource(BrokenPCM(), volume=0.5)
+
+    def play(source, after):
+        try:
+            source.read()
+        except AudioDecodeError as error:
+            after(error)
+
+    voice_env.voice.play.side_effect = play
+    with (
+        patch.object(c, "_render", new=AsyncMock(return_value=(b"audio", "ffmpeg"))),
+        patch(
+            "custom_components.your_discord_connect.voice.make_audio_source", return_value=source
+        ),
+    ):
+        with pytest.raises(HomeAssistantError) as exc:
+            await c.speak()
+    assert exc.value.translation_key == "tts_decode_failed"
+    assert c.playback_state == "error"
+    assert c.last_audio_frames == 0
+    assert c.last_audio_peak == 0
+    await c.async_close()
+
+
+def test_volume_wrapper_preserves_mid_stream_decoder_error():
+    import discord
+
+    from custom_components.your_discord_connect.voice import AudioDecodeError, CheckedVolumeSource
+
+    class FailedPCM(discord.AudioSource):
+        _current_error = None
+
+        def __init__(self):
+            self.calls = 0
+
+        def read(self):
+            self.calls += 1
+            if self.calls == 1:
+                return struct.pack("<h", 1000) * 1920
+            self._current_error = RuntimeError("decoder failed")
+            return b""
+
+    source = CheckedVolumeSource(FailedPCM(), volume=0.5)
+    assert source.read() == struct.pack("<h", 500) * 1920
+    assert source.frames_read == 1
+    assert source.pcm_peak == 500
+    with pytest.raises(AudioDecodeError):
+        source.read()
