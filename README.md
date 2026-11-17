@@ -209,3 +209,11 @@ Dies ersetzt keine vollständige Synchronisierung lokaler Codex-Unterhaltungen.
 Bei Fehlerberichten Versionsnummern und beobachtetes Verhalten angeben, jedoch
 keine Tokens oder personenbezogenen Mitgliederdaten. Dokumentation und Tests
 werden bei Funktionsänderungen mitgepflegt.
+
+## Einheitliche Projektunterlagen
+
+- [Anforderungen](REQUIREMENTS.md) und [kompakter Status](STATUS.md)
+- [Benutzerhandbuch](docs/USER_MANUAL.md) – Einrichtung und Bedienung
+- [Administrationshandbuch](docs/ADMIN_MANUAL.md) – Installation, Berechtigungen, Betrieb und Fehlerbehebung
+
+Die vorhandenen ausführlichen Spezialanleitungen, Architekturentscheidungen und Übergabedateien bleiben erhalten. Bei relevanten Entwicklungsänderungen werden Anforderungen, Status und beide Handbücher gemäß [AGENTS.md](AGENTS.md) mitgepflegt.
