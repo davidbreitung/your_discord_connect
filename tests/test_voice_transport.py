@@ -11,6 +11,7 @@ import audioop
 import discord
 import nacl.secret
 import pytest
+from discord import voice_state
 
 from custom_components.your_discord_connect.voice_transport import (
     MeasuredConnectionState,
@@ -59,6 +60,11 @@ def test_pcm_reaches_socket_as_decryptable_audible_opus(transport):
         "last_voice_send_errors": 0,
         "last_dave_unready_packets": 0,
         "last_dave_protocol": 0,
+        "loaded_discord_version": discord.__version__,
+        "loaded_davey_version": voice_state.davey.__version__,
+        "dave_protocol_version": 0,
+        "dave_session_ready": False,
+        "dave_session_status": None,
     }
 
 
@@ -133,3 +139,20 @@ async def test_dave_handshake_timeout_and_cancellation(transport):
 async def test_protocol_zero_needs_no_dave_session(transport):
     client, _, _ = transport
     await client.wait_for_encryption(timeout=0)
+
+
+async def test_timeout_reports_loaded_native_version_and_real_session_state(transport):
+    client, state, _ = transport
+    state.dave_protocol_version = 1
+    state.dave_session = voice_state.davey.DaveSession(1, 123, 456)
+    with pytest.raises(VoiceEncryptionNotReady):
+        await client.wait_for_encryption(timeout=0.001)
+    diagnostics = client.diagnostics()
+    assert diagnostics["last_voice_packets_submitted"] == 0
+    assert diagnostics["last_dave_protocol"] is None
+    assert diagnostics["dave_protocol_version"] == 1
+    assert diagnostics["dave_session_ready"] is False
+    assert diagnostics["dave_session_status"] == "inactive"
+    assert diagnostics["loaded_davey_version"] == voice_state.davey.__version__
+    assert diagnostics["loaded_discord_version"] == discord.__version__
+    state.socket.sendall.assert_not_called()

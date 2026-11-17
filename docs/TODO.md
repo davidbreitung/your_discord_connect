@@ -11,7 +11,10 @@ Keine erfundenen Termine, Verantwortlichen oder Fehlerberichte.
   discord.py 2.7.1. Lokal korrigiert: davey 0.1.7, Bereitschaftswarten/Sendesperre.
   Commit/Push ist beauftragt; Benutzer installiert danach und startet HA neu.
   Fertig: hörbare Cloud-TTS-Ausgabe und keine unbereiten DAVE-Sendeversuche.
-  Noch kein realer Hörtest, keine automatische Änderung der HA-Installation.
+  Nach Push `7653d6f` meldet der Benutzer einen DAVE-Timeout; Hörfehler weiterhin
+  offen. Vollständiger Neustart bestätigt; Benutzer findet keine Gateway-/Voice-State-
+  Protokolleinträge. Geladene Bibliotheksversion und Sitzungszustand klären; lokale
+  Commit/Push der Timeout-Diagnose ist beauftragt. Keine automatische HA-Änderung.
 
 - [ ] Zweiten Windows-Rechner nach [WINDOWS.md](WINDOWS.md) einrichten; Checkout,
   Login, Branch, WSL-/Toolversionen und Einstieg mit `HANDOVER.md` bestätigen.

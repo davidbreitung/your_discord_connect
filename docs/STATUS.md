@@ -142,3 +142,23 @@ FFmpeg-/Opus-/Kryptotests mit davey 0.1.7 erfolgreich. Ruff und Formatprüfung
 bestanden; Paketauflösung gegen HA 2026.10.4 und 2026.11.1 erfolgreich.
 Kein echter Discord-Hörtest. Frontend-Verhalten unverändert (nur Versionskopf);
 Browsertests für diesen Audiofix nicht erneut ausgeführt.
+
+
+## Neueste Rückmeldung nach 1.0.2 (17.11.2026)
+
+Korrektur als `7653d6f` nach main gepusht. Benutzer meldet danach per Screenshot:
+„Die Discord-Sprachverschlüsselung (DAVE) ist noch nicht bereit.“ Die Schutzprüfung
+greift, der Hörfehler ist damit weiterhin offen. Der Benutzer bestätigt inzwischen
+einen vollständigen HA-Neustart und findet keine Einträge zu discord.gateway oder
+discord.voice_state. Das beweist nicht, dass die Aushandlung fehlerfrei war.
+Die tatsächlich geladene davey-Version ist weiterhin unbekannt.
+Die zuvor belegte API-Unverträglichkeit erklärt deshalb nicht nachweislich jeden
+weiteren Fehler nach dem Update.
+
+Lokal ergänzte Diagnose: geladene Discord-/davey-Modulversionen, aktuelles
+DAVE-Protokoll sowie Session-Bereitschaft/-Status auch bei Timeout ohne Paket.
+Keine Änderung der Verschlüsselung, keine neue spekulative Bibliotheksumstellung.
+Commit/Push dieser Ergänzung nach main wurde beauftragt; Version bleibt 1.0.2.
+Nächster Schritt: aktuellen main-Stand installieren, HA neu starten und die neuen
+Wiedergabestatus-Attribute aus der Benutzerinstallation auswerten.
+35 gezielte Voice-/Transporttests bestanden, Ruff/Format und Diff-Prüfung erfolgreich.

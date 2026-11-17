@@ -3,6 +3,7 @@
 import asyncio
 
 import discord
+from discord import voice_state
 from discord.voice_state import VoiceConnectionState
 
 
@@ -62,7 +63,20 @@ class MeasuredVoiceClient(discord.VoiceClient):
         self._connection.reset_diagnostics()
 
     def diagnostics(self):
-        return self._connection.diagnostics()
+        # Inspect the module actually used by discord.py, not installed package
+        # metadata: a native module can remain loaded until HA fully restarts.
+        session = self._connection.dave_session
+        status = getattr(session, "status", None)
+        return {
+            **self._connection.diagnostics(),
+            "loaded_discord_version": discord.__version__,
+            "loaded_davey_version": getattr(
+                getattr(voice_state, "davey", None), "__version__", None
+            ),
+            "dave_protocol_version": self._connection.dave_protocol_version,
+            "dave_session_ready": session.ready if session is not None else False,
+            "dave_session_status": str(status).rsplit(".", 1)[-1] if status is not None else None,
+        }
 
     async def wait_for_encryption(self, timeout=10):
         """Allow the initial MLS handshake to finish, without downgrading DAVE."""

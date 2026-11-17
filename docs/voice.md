@@ -235,3 +235,15 @@ in einen Sprachkanal verbinden und kurze TTS-Nachricht testen. Erwartet:
 hörbarer Ton, `last_dave_protocol: 1`, `last_dave_unready_packets: 0`,
 `last_voice_send_errors: 0`. Diese Zahlen allein ersetzen den Hörtest nicht.
 Die erfolgreiche Wiedergabe in der Benutzerinstallation steht noch aus.
+
+
+### Diagnose nach DAVE-Timeout
+
+Die zusätzliche Diagnose nach 1.0.2 zeigt auch bei einem Timeout vor dem ersten
+Paket `loaded_discord_version`, `loaded_davey_version`, `dave_protocol_version`,
+`dave_session_ready` und `dave_session_status`. Es sind Versionen der tatsächlich
+geladenen Module, keine Aussage allein aus dem Manifest oder Paket-Metadaten.
+Erwartet werden Discord 2.7.1 und davey 0.1.7. Ein bereits geladenes natives Modul
+kann bis zu einem vollständigen HA-Neustart im Prozess bleiben. Die Sitzungswerte
+sind eine Momentaufnahme beim Ende/Abbruch des Versuchs, keine Live-Sensoren.
+`last_dave_protocol` bleibt ohne Sendeversuch weiterhin unbekannt.

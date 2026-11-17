@@ -1,5 +1,10 @@
 # Änderungen
 
+## Unveröffentlicht – Diagnose bei DAVE-Timeout
+
+- Tatsächlich geladene Discord-/davey-Version und DAVE-Sitzungszustand am Wiedergabestatus anzeigen, auch wenn vor dem ersten Paket abgebrochen wird.
+- Benutzer meldet nach 1.0.2 weiterhin fehlende DAVE-Bereitschaft; erfolgreicher Hörtest bleibt offen.
+
 ## 1.0.2
 
 - DAVE-Kompatibilität: davey auf 0.1.7 festgelegt. 0.2.0 benötigt explizite Übergangsaufrufe, die discord.py 2.7.1 nicht ausführt.
