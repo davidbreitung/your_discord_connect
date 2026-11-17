@@ -6,14 +6,12 @@ Keine erfundenen Termine, Verantwortlichen oder Fehlerberichte.
 
 ## P1 – Übergabe und reale Bestätigung
 
-- [ ] **Aktuell: TTS ohne hörbaren Ton trotz Sprechring untersuchen.** Benutzer
-  meldet übrige Funktionen allgemein als funktionierend. Cloud-TTS mit hörbarer
-  Vorschau, passende Lautstärke und normaler Sprachkanal sind inzwischen bestätigt.
-  Status kehrt auf Bereit zurück, erneuter Beitritt hilft nicht. Diagnose in HA
-  anhand Transportwerten fortsetzen: erster Diagnosecommit `4e2fb3b` liefert
-  **100 PCM-Frames / Peak 8708**, also nicht-stumme lokale Daten. Erweiterte
-  Paket-/DAVE-Diagnose im nachfolgenden main-Stand enthalten; zweiter Discord-Client laut Benutzer
-  ebenfalls stumm. Reale Ursache und erfolgreicher Hörtest weiterhin offen. Keine spekulative Änderung von Voice-Verschlüsselung.
+- [ ] **DAVE-Korrektur 1.0.2 real bestätigen.** Die Messwerte 105/105 unbereite
+  DAVE-Pakete passen zur verifizierten API-Unverträglichkeit davey 0.2.0 mit
+  discord.py 2.7.1. Lokal korrigiert: davey 0.1.7, Bereitschaftswarten/Sendesperre.
+  Commit/Push ist beauftragt; Benutzer installiert danach und startet HA neu.
+  Fertig: hörbare Cloud-TTS-Ausgabe und keine unbereiten DAVE-Sendeversuche.
+  Noch kein realer Hörtest, keine automatische Änderung der HA-Installation.
 
 - [ ] Zweiten Windows-Rechner nach [WINDOWS.md](WINDOWS.md) einrichten; Checkout,
   Login, Branch, WSL-/Toolversionen und Einstieg mit `HANDOVER.md` bestätigen.

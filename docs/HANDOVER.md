@@ -9,10 +9,9 @@ Stand **17.11.2026**. Lies zuerst `AGENTS.md`, dann [STATUS](STATUS.md) und
 - Repository: `davidbreitung/your_discord_connect`, Domain `your_discord_connect`.
 - Ziel: eigenständige Home-Assistant-Integration für Discord, von Dritten nutzbar,
   fortlaufend dokumentiert. Sprache mit Benutzer: Deutsch.
-- Implementierte Version **1.0.1**, letzter Funktionscommit **`f1e59cc`**, nach
-  `origin/main` gepusht. Zu Beginn dieser Dokumentationsaufgabe HEAD = origin/main,
-  sauberer Checkout. Der Dokumentationscommit selbst folgt darauf; aktuellen
-  Hash mit `git log -1` prüfen, nicht den alten Funktionshash blind auschecken.
+- Implementierte Version **1.0.2**, lokale DAVE-Korrektur auf `ab9a086`.
+  Commit/Push der Korrektur ist vom Benutzer beauftragt. Vor Fortsetzung
+  tatsächlichen Git-Status prüfen; alter Scrollfix `f1e59cc` ist nur Historie.
 - Lokaler Cloud-Branch heißt `work` ohne Upstream; tatsächlicher gemeinsamer
   Entwicklungsbranch ist `main`. Windows-Clone normalerweise auf `main`.
 - Bisher Cloud-Linux; Benutzer möchte künftig zwischen Windows-Rechnern mit
@@ -34,7 +33,7 @@ Stand **17.11.2026**. Lies zuerst `AGENTS.md`, dann [STATUS](STATUS.md) und
    Ausführungsbutton, Wiedergabestatus und persistenter Lautstärke (Standard 50 %).
 6. Voice-Karte mit Kategorien/Kanälen/Mitgliedern/Avataren/Mute, Text-Feed mit
    auswählbarem Kanal, visuellen Editoren und Dokumentation. Ressource manuell
-   als `/your_discord_connect/discord-cards.js?v=1.0.1` registrieren.
+   als `/your_discord_connect/discord-cards.js?v=1.0.2` registrieren.
 7. Zuletzt Scroll-Fix: Feed soll nach **jedem** Update und nachgeladenen Bildern
    ganz unten stehen; kein Erhalt einer früheren hochgescrollten Position.
 
@@ -71,7 +70,7 @@ Stand **17.11.2026**. Lies zuerst `AGENTS.md`, dann [STATUS](STATUS.md) und
   nur als Möglichkeit besprochen; eine App hat einen Bot, zweiter Bot braucht
   eigene App/Token und eine spätere Änderung der Entry-Identität.
 - Kein beauftragter Kamera-/Video- oder allgemeiner Stream-Player.
-- Versionierung ab 1.0.0, aktueller Patch 1.0.1. Ein Git-Push veröffentlicht nicht
+- Versionierung ab 1.0.0, aktueller Patch 1.0.2. Ein Git-Push veröffentlicht nicht
   automatisch eine Cloud-Umgebung, ein GitHub-Release oder die HA-Installation.
 - Wiederholte Chat-Hinweise „Umgebung veröffentlicht, warten, nichts erneut
   anwenden“ bezogen sich auf Cloud-Entwürfe. Bereits enthaltene Änderungen niemals
@@ -95,30 +94,23 @@ Frontend 20261028.5; automatisierte Testbasis ist weiterhin HA 2026.10.4.
 
 ## Was als Nächstes ansteht
 
-Die Kontextdokumentation wurde in `ff2db0e` nach main gepusht. Die nun aktuelle
-Aufgabe ist die Fehlersuche **kein TTS-Ton trotz grünem Discord-Sprechring**.
-Benutzer meldet die übrigen Funktionen allgemein als funktionierend; das ist kein
-vollständiger Testbericht jedes Einzelmerkmals.
+**Aktueller Stand 1.0.2:** davey 0.2.0 benötigt explizite Schlüsselübergänge,
+die discord.py 2.7.1 nicht aufruft. Offizielle Source-Archive verglichen;
+0.1.7 aktiviert Schlüssel noch in `process_welcome`/`process_commit`.
+Messwerte des Benutzers: 100 PCM-Frames / Peak 8708, 105 Socket-Submits,
+0 Sendefehler, **105 unbereite DAVE-Pakete / Protokoll 1**. Zweiter Client
+auch stumm, Cloud-TTS-Vorschau hörbar, Lautstärke passend, normaler Sprachkanal.
 
-Lokaler WAV-/MP3-/Cloud-Streaming-WAV-Test mit 440-Hz-Signal liefert nicht-stumme PCM-/Opus-Daten. Eine
-allgemeine Encoder-Stummschaltung ist damit nicht reproduziert. Separat gefunden:
-Der bisherige PCMVolumeTransformer verdeckt FFmpeg-Fehler; native Tests verwendeten
-nur Stille. Die nachfolgende Audio-Diagnose ergänzt Fehlererkennung sowie
-`last_audio_frames`/`last_audio_peak` am Wiedergabestatus und aussagekräftige Tests.
-Der Benutzer hat inzwischen bestätigt: **Home Assistant Cloud**, hörbare Vorschau,
-passende Lautstärke, normaler Sprachkanal. Der Status kehrt laut Benutzer auf **Bereit** zurück; auch nach erneutem
-Kanalbeitritt bleibt die Ausgabe stumm. Reale Ursache weiterhin offen. Nächster
-Diagnoseschritt sind die neuen Frame-/Pegelwerte in der Zielinstallation; konkrete
-Fehlertexte liegen bislang nicht vor. Lokale Audio-Diagnose: **103 Python-Tests
-erfolgreich** vor Cloud-Format-Ergänzung; danach **24 gezielte Voice-Tests erfolgreich**,
-Ruff/Format erfolgreich. Nicht als behobenen Benutzerfehler
-verkaufen. Keine Tokens, Audiodaten oder Texte zur Diagnose protokollieren.
+Lokal auf davey 0.1.7 umgestellt; vor TTS maximal zehn Sekunden auf Bereitschaft
+warten und unbereite Sendeversuche blockieren. Übersetzte HA-Fehlermeldung statt
+scheinbaren Erfolgs; kein Abschalten der Verschlüsselung. Version 1.0.2 und
+Lockfiles/Dokumentation angepasst. Begründung/Quellen in DECISIONS.
 
-Commit/Push der Diagnose wurde vom Benutzer beauftragt. Die Manifest-Version
-bleibt 1.0.1; für die Diagnose den aktuellen main-Stand erneut installieren und HA
-neu starten. Nächster Schritt: anhand der Messwerte Erzeugung,
-Dekodierung, UDP-/DAVE-Transport und Empfängerwiedergabe auseinanderhalten.
-Music Assistant und weitere zurückgestellte Features weiterhin nicht beginnen.
+Commit/Push der Korrektur nach main wurde vom Benutzer beauftragt.
+Als Nächstes die reale Wiedergabe nach Installation bestätigen.
+Benutzer muss 1.0.2 installieren, HA vollständig neu starten und TTS hören.
+Die API-Unverträglichkeit ist belegt, die Behebung im realen Kanal noch nicht.
+Music Assistant und zurückgestellte Features weiterhin nicht beginnen.
 
 ## Herkunft, Unsicherheiten und nicht gesicherte Informationen
 
@@ -147,7 +139,7 @@ konsistent halten. Keine erfundenen Ergebnisse und keinen vollständigen private
 Chatdump committen. `git status`, Fetch und Fast-Forward-Prüfung vor autorisiertem
 Push; niemals fremde Änderungen durch Force-Push ersetzen.
 
-## Neuester Diagnosefortschritt: PCM vorhanden
+## Historischer Diagnosefortschritt vor 1.0.2: PCM vorhanden
 
 Erste Diagnose in `4e2fb3b` committed und nach main gepusht, Manifest bleibt 1.0.1.
 Benutzer lieferte danach **100 Frames, Peak 8708**: rund zwei Sekunden nicht-stummes
@@ -166,3 +158,13 @@ weiteren Versuch. Keine Verschlüsselung deaktivieren oder Ursache voreilig fest
 
 Prüfung der erweiterten Transportdiagnose: **111 Python-Tests erfolgreich**,
 Ruff und Formatprüfung erfolgreich. Kein realer Discord-Hörtest in dieser Umgebung.
+
+
+## Prüfung der DAVE-Korrektur 1.0.2
+
+116 Python-Tests bestanden, einschließlich Bereitschaft/Timeout/Abbruch,
+blockiertem UDP-Submit bei unbereitem DAVE und HA-Fehlerstatus. Native
+FFmpeg-/Opus-/Kryptotests mit davey 0.1.7 erfolgreich. Ruff und Formatprüfung
+bestanden; Paketauflösung gegen HA 2026.10.4 und 2026.11.1 erfolgreich.
+Kein echter Discord-Hörtest. Frontend-Verhalten unverändert (nur Versionskopf);
+Browsertests für diesen Audiofix nicht erneut ausgeführt.

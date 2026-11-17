@@ -1,10 +1,15 @@
 # Aktueller Entwicklungsstand
 
-Stand: **17.11.2026**. Implementierte Version **1.0.1**. Basiscommit vor der Audio-Diagnose:
-[`f1e59cc`](https://github.com/davidbreitung/your_discord_connect/commit/f1e59cc).
-Die Audio-Diagnose ist als nachfolgende Änderung enthalten; die Manifest-Version
-bleibt 1.0.1. Für diese Diagnose den aktuellen main-Stand erneut herunterladen
-und Home Assistant neu starten. Die reale Fehlerursache bleibt offen.
+Stand: **17.11.2026**. Implementierte Version **1.0.2**, lokale DAVE-Korrektur
+auf Basis des gepushten Diagnosecommits `ab9a086`. Commit/Push dieses
+Fixes nach main wurde vom Benutzer beauftragt; der Hörtest bleibt offen.
+
+Aktueller Befund: 105 von 105 Paketen bei unbereitem DAVE-Protokoll 1, keine
+lokalen Sendefehler, nicht-stummes PCM. Quellcodevergleich belegt die
+API-Unverträglichkeit davey 0.2.0 / discord.py 2.7.1. Korrektur: davey 0.1.7,
+Bereitschaftswarten und Sendesperre bei fehlender DAVE-Bereitschaft. Details und
+Quellen in [DECISIONS](DECISIONS.md). Historische Untersuchungsstände unten
+sind durch diesen Befund ergänzt; die reale Hörbestätigung bleibt offen.
 
 ## Bestätigter Repository-Stand
 
@@ -67,7 +72,7 @@ keine in dieser Cloud-Umgebung verifizierte Installation.
 
 ## Aktuelle Aufgabe
 
-Lautlose TTS-Ausgabe trotz grünem Discord-Sprechring untersuchen. Der Benutzer
+DAVE-Korrektur 1.0.2 prüfen und nach Freigabe bereitstellen; danach echter Hörtest. Der Benutzer
 meldet allgemein, dass der übrige Funktionsumfang funktioniert; eine detaillierte
 Einzelabnahme ist damit nicht dokumentiert. Prioritäten: [TODO.md](TODO.md).
 
@@ -127,3 +132,13 @@ sie sind nicht Teil des bereits installierten ersten Diagnosecommits.
 
 Prüfung der erweiterten Transportdiagnose: **111 Python-Tests erfolgreich**,
 Ruff und Formatprüfung erfolgreich. Kein realer Discord-Hörtest in dieser Umgebung.
+
+
+## Prüfung der DAVE-Korrektur 1.0.2
+
+116 Python-Tests bestanden, einschließlich Bereitschaft/Timeout/Abbruch,
+blockiertem UDP-Submit bei unbereitem DAVE und HA-Fehlerstatus. Native
+FFmpeg-/Opus-/Kryptotests mit davey 0.1.7 erfolgreich. Ruff und Formatprüfung
+bestanden; Paketauflösung gegen HA 2026.10.4 und 2026.11.1 erfolgreich.
+Kein echter Discord-Hörtest. Frontend-Verhalten unverändert (nur Versionskopf);
+Browsertests für diesen Audiofix nicht erneut ausgeführt.

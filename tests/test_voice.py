@@ -19,7 +19,10 @@ from homeassistant.helpers import entity_registry as er
 from custom_components.your_discord_connect.const import DOMAIN
 from custom_components.your_discord_connect.gateway import DiscordGateway
 from custom_components.your_discord_connect.voice import LEAVE_ALL, BotVoice, make_audio_source
-from custom_components.your_discord_connect.voice_transport import MeasuredVoiceClient
+from custom_components.your_discord_connect.voice_transport import (
+    MeasuredVoiceClient,
+    VoiceEncryptionNotReady,
+)
 
 
 @pytest.fixture
@@ -529,6 +532,7 @@ async def test_transport_diagnostics_are_reset_and_exposed_after_playback(voice_
     c = voice_env.controller
     # A mock exposing the real interface preserves the controller's isinstance check.
     voice_env.voice.__class__ = MeasuredVoiceClient
+    voice_env.voice.wait_for_encryption = AsyncMock()
     expected = {
         "last_voice_packets_submitted": 105,
         "last_voice_send_errors": 0,
@@ -549,4 +553,32 @@ async def test_transport_diagnostics_are_reset_and_exposed_after_playback(voice_
     voice_env.voice.reset_diagnostics.assert_called_once()
     assert c.last_transport == expected
     assert c.playback_state == "idle"
+    await c.async_close()
+
+
+@pytest.mark.parametrize("during_playback", [False, True])
+async def test_unready_encryption_reports_error_not_success(voice_env, during_playback):
+    c = voice_env.controller
+    voice_env.voice.__class__ = MeasuredVoiceClient
+    voice_env.voice.wait_for_encryption = AsyncMock()
+    if during_playback:
+        voice_env.voice.play.side_effect = lambda source, after: after(VoiceEncryptionNotReady())
+    else:
+        voice_env.voice.wait_for_encryption.side_effect = VoiceEncryptionNotReady()
+    await c.select("General (10)")
+    c.set_text("Encryption test")
+    with (
+        patch.object(c, "_render", new=AsyncMock(return_value=(b"audio", "ffmpeg"))),
+        patch(
+            "custom_components.your_discord_connect.voice.make_audio_source",
+            return_value=MagicMock(),
+        ) as create,
+    ):
+        with pytest.raises(HomeAssistantError) as err:
+            await c.speak()
+        assert err.value.translation_key == "voice_encryption_not_ready"
+        if not during_playback:
+            create.assert_not_called()
+            voice_env.voice.play.assert_not_called()
+    assert c.playback_state == "error"
     await c.async_close()

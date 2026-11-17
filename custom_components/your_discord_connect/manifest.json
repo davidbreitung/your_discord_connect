@@ -12,9 +12,9 @@
   "requirements": [
     "discord.py==2.7.1",
     "PyNaCl==1.6.2",
-    "davey==0.2.0"
+    "davey==0.1.7"
   ],
-  "version": "1.0.1",
+  "version": "1.0.2",
   "after_dependencies": [
     "tts"
   ],

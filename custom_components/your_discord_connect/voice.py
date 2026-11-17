@@ -14,7 +14,7 @@ from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.storage import Store
 
 from .const import DOMAIN
-from .voice_transport import MeasuredVoiceClient
+from .voice_transport import MeasuredVoiceClient, VoiceEncryptionNotReady
 
 LEAVE_ALL = "alle verlassen"
 MAX_TEXT_LENGTH = 255
@@ -299,6 +299,15 @@ class BotVoice:
         self._validate_playback(channel_id)
         audio, executable = await self._render(text)
         self._validate_playback(channel_id)
+        voice = self.voice_client
+        if isinstance(voice, MeasuredVoiceClient):
+            voice.reset_diagnostics()
+            try:
+                await voice.wait_for_encryption()
+            except VoiceEncryptionNotReady as err:
+                self.last_transport = voice.diagnostics()
+                raise voice_error("voice_encryption_not_ready") from err
+            self._validate_playback(channel_id)
         # Subprocess creation is blocking and must not run on HA's event loop.
         creation = self.hass.async_add_executor_job(partial(make_audio_source, audio, executable))
         try:
@@ -309,19 +318,17 @@ class BotVoice:
             raise
         except (discord.DiscordException, OSError) as err:
             raise voice_error("tts_ffmpeg_failed") from err
-        voice = self.voice_client
         done = self.hass.loop.create_future()
 
         def finish(error):
             if not done.done():
                 if error:
-                    done.set_exception(
-                        voice_error(
-                            "tts_decode_failed"
-                            if isinstance(error, AudioDecodeError)
-                            else "tts_playback_failed"
-                        )
-                    )
+                    key = "tts_playback_failed"
+                    if isinstance(error, AudioDecodeError):
+                        key = "tts_decode_failed"
+                    elif isinstance(error, VoiceEncryptionNotReady):
+                        key = "voice_encryption_not_ready"
+                    done.set_exception(voice_error(key))
                 else:
                     done.set_result(None)
 
@@ -333,8 +340,6 @@ class BotVoice:
             self._validate_playback(channel_id)
             source.volume = self.volume / 100
             self._active_source = source
-            if isinstance(voice, MeasuredVoiceClient):
-                voice.reset_diagnostics()
             voice.play(source, after=after)
             started = True
             self._set_phase("playing")

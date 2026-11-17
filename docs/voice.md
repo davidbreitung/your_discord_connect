@@ -44,7 +44,7 @@ Automationen gegebenenfalls anpassen. Die übrigen Mitgliedergeräte behalten ih
    prüfen. Es wird kein eingehender Port zur Home-Assistant-Oberfläche benötigt.
 
 Die Integration installiert `discord.py==2.7.1`, `PyNaCl==1.6.2` und
-`davey==0.2.0` ausdrücklich als getrennte Abhängigkeiten. Das Voice-Extra von
+`davey==0.1.7` ausdrücklich als getrennte Abhängigkeiten. Das Voice-Extra von
 discord.py verlangt PyNaCl < 1.6 und kollidiert damit mit Home Assistants
 Vorgabe PyNaCl 1.6.2. Die getrennte Deklaration erhält die Voice-Unterstützung
 einschließlich DAVE; Home Assistants Paketvorgaben bleiben wirksam. Discord-Verbindung und Audioübertragung bleiben
@@ -142,7 +142,7 @@ Home-Assistant-Skript mit `mode: queued` koordinieren.
 
 Es gibt noch keine `media_player`-Entität: `tts.speak` mit dem Bot als Media-Player
 wird daher nicht angeboten. Die Text-/Button-Kombination verwendet bereits denselben
-HA-TTS-Unterbau. Beliebige Audiostreams, Lautstärkeregelung und Video sind nicht Teil
+HA-TTS-Unterbau. Beliebige Audiostreams und Video sind nicht Teil
 dieser Version.
 
 ## Stand der Prüfung
@@ -202,13 +202,13 @@ normal beenden. Die zusätzliche Transportdiagnose ergänzt deshalb:
 | `last_voice_packets_submitted` | Vom lokalen Socket ohne Fehler angenommene Pakete. **Keine** Empfangsbestätigung von Discord oder Zuhörern. |
 | `last_voice_send_errors` | Lokale OSErrors beim Senden, auch wenn discord.py diese abfängt. |
 | `last_dave_protocol` | Zuletzt beim Paketversand beobachtete DAVE-Protokollversion; null vor erstem Paket, 0 bedeutet keine aktive DAVE-Protokollversion. |
-| `last_dave_unready_packets` | Pakete, bei deren Versand ein DAVE-Protokoll > 0 aktiv war, dessen Session aber nicht verschlüsselungsbereit war. |
+| `last_dave_unready_packets` | Sendeversuche bei DAVE-Protokoll > 0 ohne bereite Session; ab 1.0.2 werden diese vor dem Socket blockiert. |
 
 Die Werte gelten pro Durchsageversuch und werden beim nächsten Versuch
 zurückgesetzt. Discords abschließende Stille-Pakete zählen mit; die Anzahl kann
 daher z. B. fünf höher sein als `last_audio_frames`. Es werden nur Zähler und die
 Protokollversion erfasst, keine Paketbytes, Adressen, Schlüssel oder Session-IDs.
-Die Diagnose verändert weder Verschlüsselung noch Wiederholungsverhalten.
+Die Diagnose deaktiviert keine Verschlüsselung; ab 1.0.2 werden unbereite DAVE-Sendeversuche blockiert.
 
 Viele Sendefehler grenzen auf ein lokales Transportproblem ein. DAVE-unbereite
 Pakete sind ein Hinweis auf die Aushandlung, kein Beweis über den Zustand beim
@@ -219,3 +219,19 @@ eine lokale Wiedergabeeinstellung zu unterscheiden.
 Die Erweiterung verwendet einen kleinen Adapter der fest gepinnten discord.py-
 Verbindungsklasse. Für die Messung ist nach Installation ein Neustart von HA bzw.
 ein vollständiges Neuladen der Integration und Neuverbinden des Bots erforderlich.
+
+
+### Korrektur in 1.0.2
+
+Die Kombination discord.py 2.7.1 / davey 0.2.0 kann die DAVE-Sitzung unbereit
+lassen. 1.0.2 verwendet die kompatible davey-Version 0.1.7. Vor der Wiedergabe
+wartet der Bot bis zu zehn Sekunden auf Bereitschaft. Bleibt sie aus, zeigt HA
+einen Fehler; während der Wiedergabe werden ebenfalls keine unbereiten
+DAVE-Pakete mehr gesendet. Verschlüsselung bleibt aktiv.
+
+Nach Bereitstellung Version 1.0.2 installieren und **Home Assistant vollständig
+neu starten**, damit die geänderte native Abhängigkeit geladen wird. Bot wieder
+in einen Sprachkanal verbinden und kurze TTS-Nachricht testen. Erwartet:
+hörbarer Ton, `last_dave_protocol: 1`, `last_dave_unready_packets: 0`,
+`last_voice_send_errors: 0`. Diese Zahlen allein ersetzen den Hörtest nicht.
+Die erfolgreiche Wiedergabe in der Benutzerinstallation steht noch aus.

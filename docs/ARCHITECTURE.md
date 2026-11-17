@@ -1,6 +1,6 @@
 # Technische Architektur
 
-Stand: 17.11.2026, Codebasis 1.0.1 (`f1e59cc`). Diese Übersicht ergänzt die
+Stand: 17.11.2026, Codebasis 1.0.2. Diese Übersicht ergänzt die
 [Entwicklungsanleitung](development.md), [API](api.md), [Dashboard](dashboard.md)
 und [Voice-Dokumentation](voice.md). Entscheidungen: [DECISIONS.md](DECISIONS.md).
 
@@ -105,7 +105,7 @@ maximal 255 (HA-Zustandslimit). Expliziter Versand, keine automatische Wiederhol
 `allowed_mentions` deaktiviert Erwähnungsbenachrichtigungen. Button leert einen
 unveränderten Entwurf erst nach Bestätigung; ein neuer Entwurf bleibt erhalten.
 
-Frontend-Ressource: `/your_discord_connect/discord-cards.js?v=1.0.1`, manuell als
+Frontend-Ressource: `/your_discord_connect/discord-cards.js?v=1.0.2`, manuell als
 JavaScript-Modul registrieren. Custom Types:
 `custom:discord-channel-overview`, `custom:discord-text-channel-feed`.
 
@@ -142,7 +142,7 @@ Kanalwechsel, Disconnect oder Unload brechen Aufträge ab. Grenzen: 255 Textzeic
 kein Video, kein Music-Assistant-Player.
 
 Python >=3.14.2, HA-Testbasis 2026.10.4, uv 0.13.6; Discord 2.7.1, PyNaCl 1.6.2,
-davey 0.2.0, CFFI-Constraint 2.0.0. Node 22 und Playwright 1.58.2 nur für
+davey 0.1.7, CFFI-Constraint 2.0.0. Node 22 und Playwright 1.58.2 nur für
 Frontend-Tests. Versionsautorität sind Manifest, Projektmetadaten und Lockfiles.
 Tests und CI: [development.md](development.md); Windows/WSL: [WINDOWS.md](WINDOWS.md).
 
@@ -162,3 +162,13 @@ Die Connection-State-Unterklasse zählt Submits/OSErrors und beobachtet DAVE-
 Bereitschaft; Zähler werden vor `play` zurückgesetzt und nach Ende am Statussensor
 bereitgestellt. Keine Packet-/Key-/Endpoint-Daten verlassen den Adapter.
 `VoiceConnectionState` ist ein Bibliotheksdetail; Upgrades müssen den Adapter testen.
+
+
+## DAVE-Bereitschaft ab 1.0.2
+
+DAVE-Abhängigkeit bewusst 0.1.7: 0.2.0 verlangt einen anderen Transition-Lifecycle,
+den discord.py 2.7.1 nicht bedient (Begründung/Quellen: DECISIONS). `BotVoice` wartet
+nach TTS-Erzeugung maximal zehn Sekunden auf die Verschlüsselungsbereitschaft.
+Der Adapter blockiert unbereite DAVE-Pakete vor dem Socket-Submit. Ein solcher
+Fehler während Audioframes beendet die Wiedergabe mit übersetztem HA-Fehler.
+Abbruch und Queue-Bereinigung bleiben erhalten; IDs und Datenmodell unverändert.

@@ -23,7 +23,9 @@ Die Tests nutzen echtes Home Assistant **2026.10.4**, festgelegt durch
 Entwicklungsabhängigkeiten. Discord-Antworten werden simuliert; Tokens, eine
 externe Datenbank oder ein echter Server sind für die Tests nicht nötig.
 REST nutzt Home Assistants `aiohttp`; das Gateway verwendet `discord.py==2.7.1` mit explizitem
-`PyNaCl==1.6.2` und `davey==0.2.0`.
+`PyNaCl==1.6.2` und `davey==0.1.7`.
+davey nicht separat auf 0.2.0 aktualisieren: dessen expliziter Transition-Lifecycle
+ist mit discord.py 2.7.1 inkompatibel; Details in [DECISIONS](DECISIONS.md).
 Die Bibliothek übernimmt Heartbeats, Reconnect, Session Resume und DAVE für Voice.
 Für den nativen Audiotest FFmpeg mit Opus-Encoder installieren (unter Debian/Ubuntu
 `sudo apt-get install ffmpeg libopus0`). CI installiert FFmpeg ausdrücklich.

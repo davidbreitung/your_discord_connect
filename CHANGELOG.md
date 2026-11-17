@@ -1,12 +1,18 @@
 # Änderungen
 
-## Unveröffentlicht – Voice-Transportdiagnose
+## 1.0.2
+
+- DAVE-Kompatibilität: davey auf 0.1.7 festgelegt. 0.2.0 benötigt explizite Übergangsaufrufe, die discord.py 2.7.1 nicht ausführt.
+- Vor TTS bis zu zehn Sekunden auf Verschlüsselungsbereitschaft warten; bei fehlender Bereitschaft Fehler statt scheinbar erfolgreicher Ausgabe. Unbereite DAVE-Sendeversuche werden blockiert.
+- Reale Hörbestätigung nach Installation steht noch aus.
+
+### Voice-Transportdiagnose
 
 - Paket-Submits, lokale UDP-Sendefehler und DAVE-Bereitschaft pro Durchsage messen, ohne Verschlüsselung oder Wiederholungen zu ändern.
 - Tatsächlichen Opus-/Paketverschlüsselungs-/Sendepfad mit simuliertem Socket testen; Diagnose enthält keine Paketdaten oder Schlüssel.
 - Benutzerwerte 100 PCM-Frames und Peak 8708 grenzen den offenen TTS-Fehler hinter der lokalen PCM-Verarbeitung ein.
 
-## Unveröffentlicht – Audio-Diagnose
+### Audio-Diagnose
 
 - FFmpeg-Dekodierungsfehler und fehlende Audioframes werden durch den Lautstärke-Wrapper nicht mehr als erfolgreiches Wiedergabeende verdeckt.
 - Wiedergabestatus um lokale Audioframe-/Pegelwerte ergänzt; keine Texte oder Audiodaten protokolliert.

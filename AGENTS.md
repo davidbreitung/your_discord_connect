@@ -49,8 +49,10 @@
   Node.js 22 für Browsertests. Vollständige HA-Tests unter Linux/WSL2, nicht als
   zugesicherter nativer Windows-Workflow. Anleitung: `docs/WINDOWS.md`.
 - `discord.py[voice]==2.7.1` **nicht wieder einführen**: PyNaCl < 1.6 kollidiert mit
-  HA. Aktuell separate Anforderungen Discord 2.7.1, PyNaCl 1.6.2 und davey 0.2.0;
-  Entwicklungs-CFFI 2.0.0 entspricht HA. Änderungen gegen HA-Constraints prüfen.
+  HA. Aktuell separate Anforderungen Discord 2.7.1, PyNaCl 1.6.2 und davey 0.1.7;
+  Entwicklungs-CFFI 2.0.0 entspricht HA. davey 0.2.0 verlangt zusätzliche
+  Transition-Aufrufe, die discord.py 2.7.1 nicht ausführt: nicht ungeprüft upgraden.
+  Änderungen gegen HA-Constraints prüfen.
 - `uv.lock` und `package-lock.json` pflegen; keine unkontrollierten Upgrades.
 - Python: `uv sync --frozen`, `uv run ruff check .`, `uv run ruff format --check .`,
   `uv run pytest`. Bei Dependency-/Manifeständerungen zusätzlich

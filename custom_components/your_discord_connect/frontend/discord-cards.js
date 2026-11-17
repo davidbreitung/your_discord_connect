@@ -1,4 +1,4 @@
-/* Your Discord Connect 1.0.1 — no external libraries or bot credentials. */
+/* Your Discord Connect 1.0.2 — no external libraries or bot credentials. */
 const DOMAIN = "your_discord_connect";
 const CSS = `
 :host{display:block;color:#dbdee1;font-family:var(--primary-font-family,system-ui,sans-serif)}

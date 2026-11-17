@@ -1,4 +1,4 @@
-# Dashboard-Karten und private Nachrichten (1.0.1)
+# Dashboard-Karten und private Nachrichten (1.0.2)
 
 Die Integration enthält zwei eigene Lovelace-Karten. Es ist kein weiteres
 HACS-Frontend-Repository nötig. Beide Karten verwenden die bestehende Integration;
@@ -10,7 +10,7 @@ Bot-Token gehören niemals in die Kartenkonfiguration.
    und Home Assistant neu starten.
 2. Im Benutzerprofil **Erweiterter Modus** aktivieren.
 3. Unter **Einstellungen → Dashboards → ⋮ → Ressourcen** eine Ressource hinzufügen:
-   - URL: `/your_discord_connect/discord-cards.js?v=1.0.1`
+   - URL: `/your_discord_connect/discord-cards.js?v=1.0.2`
    - Typ: **JavaScript-Modul**
 4. Dashboard im Browser neu laden. Bei Updates die Versionsangabe in dieser URL
    ändern, falls der Browser noch die alte Datei verwendet.
@@ -25,7 +25,7 @@ Bei YAML-Dashboards die Ressource stattdessen in der bestehenden
 ```yaml
 lovelace:
   resources:
-    - url: /your_discord_connect/discord-cards.js?v=1.0.1
+    - url: /your_discord_connect/discord-cards.js?v=1.0.2
       type: module
 ```
 

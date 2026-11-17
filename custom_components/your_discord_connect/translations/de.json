@@ -213,6 +213,9 @@
     },
     "tts_decode_failed": {
       "message": "FFmpeg konnte die TTS-Audiodaten nicht dekodieren oder lieferte keine abspielbaren Audioframes. Prüfe den TTS-Anbieter und die FFmpeg-Installation."
+    },
+    "voice_encryption_not_ready": {
+      "message": "Die Discord-Sprachverschlüsselung (DAVE) ist noch nicht bereit. Bitte den Bot erneut verbinden und die installierten Integrationsabhängigkeiten prüfen."
     }
   },
   "services": {

@@ -1,7 +1,13 @@
-"""Observe discord.py's actual send path without changing encryption or retry policy."""
+"""Measure voice transport and prevent sends before negotiated DAVE is ready."""
+
+import asyncio
 
 import discord
 from discord.voice_state import VoiceConnectionState
+
+
+class VoiceEncryptionNotReady(discord.ClientException):
+    """Negotiated DAVE has no usable encryption session."""
 
 
 class MeasuredConnectionState(VoiceConnectionState):
@@ -22,6 +28,9 @@ class MeasuredConnectionState(VoiceConnectionState):
         self.last_dave_protocol = self.dave_protocol_version
         if self.dave_protocol_version > 0 and not self.can_encrypt:
             self.dave_unready_packets += 1
+            # discord.py otherwise falls back to transport-only encryption.
+            # Raise outside its swallowed OSError path so playback reports failure.
+            raise VoiceEncryptionNotReady("DAVE session is not ready")
         try:
             super().send_packet(packet)
         except OSError:
@@ -40,7 +49,7 @@ class MeasuredConnectionState(VoiceConnectionState):
 
 
 class MeasuredVoiceClient(discord.VoiceClient):
-    """Use the library's connection-state factory and unchanged audio implementation.
+    """Use the library's connection-state factory with a DAVE readiness guard.
 
     VoiceConnectionState is a discord.py implementation detail. Keep its small
     adapter tested against the pinned dependency when upgrading discord.py.
@@ -54,3 +63,14 @@ class MeasuredVoiceClient(discord.VoiceClient):
 
     def diagnostics(self):
         return self._connection.diagnostics()
+
+    async def wait_for_encryption(self, timeout=10):
+        """Allow the initial MLS handshake to finish, without downgrading DAVE."""
+        try:
+            async with asyncio.timeout(timeout):
+                while (
+                    self._connection.dave_protocol_version > 0 and not self._connection.can_encrypt
+                ):
+                    await asyncio.sleep(0.1)
+        except TimeoutError as err:
+            raise VoiceEncryptionNotReady("DAVE session did not become ready") from err

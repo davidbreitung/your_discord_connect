@@ -82,7 +82,7 @@ class DiscordClient:
                 headers={
                     "Authorization": f"Bot {self._token}",
                     "User-Agent": (
-                        "DiscordBot (https://github.com/davidbreitung/your_discord_connect, 1.0.1)"
+                        "DiscordBot (https://github.com/davidbreitung/your_discord_connect, 1.0.2)"
                     ),
                 },
                 params=params,

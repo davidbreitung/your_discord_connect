@@ -45,3 +45,28 @@ Adapter beobachtet. Hintergrund: Socket-OSErrors können von discord.py unterdr�
 werden, und „verbunden“ garantiert keine bereite DAVE-Session. Nur Zähler/Protokoll-
 version erfassen; keine Verschlüsselung deaktivieren und keine Empfangsbestätigung
 aus einem lokalen Socket-Submit ableiten. Die konkrete Fehlerursache bleibt offen.
+
+## DAVE-Kompatibilität in 1.0.2 (17.11.2026)
+
+Die Benutzerinstallation meldete 105 Socket-Submits, keine lokalen Sendefehler,
+aber **105 unbereite DAVE-Pakete bei Protokoll 1**. PCM: 100 Frames, Peak 8708;
+auch ein zweiter Discord-Client blieb stumm.
+
+Quellcodevergleich der offiziellen PyPI-Sdists bestätigt: davey 0.1.7 aktiviert
+nach `process_welcome`/`process_commit` die Schlüssel über `update_ratchets`.
+davey 0.2.0 verlangt dafür zusätzliche `prepare_transition`/`execute_transition`-
+Aufrufe. discord.py 2.7.1 führt diese davey-Methoden nicht aus. Das ist eine
+konkrete API-Unverträglichkeit und passt zum gemessenen Zustand; ein erfolgreicher
+Hörtest nach der Korrektur ist noch nicht bestätigt.
+
+1.0.2 pinnt daher **davey 0.1.7**, behält Discord 2.7.1/PyNaCl 1.6.2 und die
+Verschlüsselung bei. Vor Wiedergabe bis zu zehn Sekunden auf DAVE warten; bei
+Timeout gezielter HA-Fehler. Der Transportadapter blockiert auch spätere
+unbereite DAVE-Sendeversuche, statt transportverschlüsselte Daten ohne die
+vereinbarte zusätzliche DAVE-Verschlüsselung zu senden. Kein eigener MLS-Stack,
+kein Protokoll-Downgrade und keine automatische Wiederholung einer Durchsage.
+
+Quellen: [davey 0.1.7](https://pypi.org/project/davey/0.1.7/),
+[davey 0.2.0](https://pypi.org/project/davey/0.2.0/), jeweils `davey/src/session.rs`
+im Source-Archiv; [discord.py 2.7.1](https://pypi.org/project/discord.py/2.7.1/),
+`discord/gateway.py` und `discord/voice_state.py`.
