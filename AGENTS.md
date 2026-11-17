@@ -96,3 +96,18 @@
   ohne ausdrückliche Freigabe. Keine eigene Synchronisation von `CODEX_HOME`.
 - Cloud-Umgebungsveröffentlichung, Git-Push, Release und HA-Deployment sind
   verschiedene Aktionen. Produktive Systeme nicht ohne entsprechenden Auftrag ändern.
+
+
+## Gemeinsamer Entwicklungs- und Dokumentationsstandard
+
+Diese Regeln ergaenzen die bestehenden Discord-spezifischen Vorgaben; sie ersetzen weder Architektur- noch Sicherheitsentscheidungen.
+
+1. Vor jeder Entwicklung auch `REQUIREMENTS.md`, `STATUS.md`, `docs/USER_MANUAL.md` und `docs/ADMIN_MANUAL.md` lesen. Die bestehenden Quellen `docs/HANDOVER.md`, `docs/STATUS.md`, `docs/TODO.md`, `docs/ARCHITECTURE.md` und `docs/DECISIONS.md` bleiben erhalten und massgeblich.
+2. Neue oder geaenderte Anforderungen und Akzeptanzkriterien in `REQUIREMENTS.md` dokumentieren; keine stillschweigenden Aenderungen am Funktionsumfang. Bei unveraenderten Anforderungen die Datei nicht kuenstlich umschreiben.
+3. Bei jeder wesentlichen Entwicklungsaufgabe `STATUS.md` aktualisieren: umgesetzte Aenderungen, tatsaechlich ausgefuehrte Tests und Ergebnisse, nicht getestete Bereiche, bekannte Probleme und naechste Schritte. Mit `docs/STATUS.md`, `docs/TODO.md` und `docs/HANDOVER.md` abstimmen.
+4. **Beide Handbuecher dauerhaft mitpflegen:** `docs/USER_MANUAL.md` fuer Anwender (Einrichtung, Bedienung, Funktionen, typische Fehler) und `docs/ADMIN_MANUAL.md` fuer Administratoren (Installation, Berechtigungen, Betrieb, Sicherheit, Updates, Backup, Diagnose und Rollback). Betroffene Abschnitte bei jeder relevanten Aenderung aktualisieren; bestehende Spezialanleitungen in `docs/` weiter pflegen.
+5. Relevante Dokumentationsaenderungen zusammen mit den Codeaenderungen committen und bei autorisiertem Auftrag pushen. Falls ein Handbuch nicht betroffen ist, dies in `STATUS.md` begruenden statt kosmetische Aenderungen zu erzwingen.
+6. Nur tatsaechlich ausgefuehrte Tests als erfolgreich bezeichnen. Simulierte Tests, Browser-Tests und echte Discord-/HA-/TTS-Abnahmen klar unterscheiden. Unfertige Funktionen nicht als verfuegbar beschreiben.
+7. Vor Abschluss Code, Anforderungen, Status, README, beide Handbuecher, Spezialanleitungen und Entscheidungen auf Konsistenz pruefen.
+8. Keine Secrets, Bot-Tokens, persoenlichen Mitgliederdaten oder privaten Home-Assistant-Konfigurationen committen. Bestehende Sicherheits-, Git- und Testregeln gelten weiterhin; produktive Dienste nicht ohne ausdruecklichen Auftrag aendern oder neu starten.
+9. Beim Wechsel zwischen Work, Codex und anderen Agenten Projektregeln erneut lesen; ein Chatverlauf wird nicht automatisch vollstaendig uebertragen.
