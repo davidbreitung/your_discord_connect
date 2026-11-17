@@ -108,3 +108,22 @@ Rückdekodierung. Die Ursache des Benutzerfalls bleibt offen, nicht als gelöst 
 Prüfung der ersten lokalen Audio-Diagnose: **103 Python-Tests erfolgreich**, Ruff
 und Formatprüfung erfolgreich. Nach Cloud-Format-Ergänzung: **24 gezielte Voice-Tests erfolgreich**, ebenfalls
 Ruff/Format erfolgreich. Kein echter Discord-Hörtest durchgeführt.
+
+## PCM-Nachweis aus der Benutzerinstallation (17.11.2026)
+
+Nach Installation der ersten Diagnose (`4e2fb3b`) meldet der Benutzer
+`last_audio_frames: 100`, `last_audio_peak: 8708`, Queue 0. Damit sind etwa zwei
+Sekunden nicht-stummes PCM **nach** Lautstärkeregelung im realen System belegt.
+Das bestätigt weder Opus-/DAVE-Erfolg noch Empfang beim Zuhörer; kein Decoderfix
+als vollständige Lösung behaupten. Die Gegenprobe mit einem zweiten Discord-Client ist ebenfalls stumm, laut
+Benutzerbestätigung. Ein Problem ausschließlich am bisherigen Endgerät ist damit
+unwahrscheinlicher; die genaue Ursache im gemeinsamen Ausgabepfad bleibt offen.
+
+Ergänzter kleiner `MeasuredVoiceClient`-/`MeasuredConnectionState`-Adapter
+für Paket-Submits, von discord.py abgefangene lokale Sendefehler und DAVE-unbereite
+Sendemomente. Gleicher Codec-/Verschlüsselungs-/Netzwerkpfad, keine Schlüssel-/Paket-
+Logs. Neue Attribute brauchen diesen neueren Stand und eine neue Bot-Verbindung;
+sie sind nicht Teil des bereits installierten ersten Diagnosecommits.
+
+Prüfung der erweiterten Transportdiagnose: **111 Python-Tests erfolgreich**,
+Ruff und Formatprüfung erfolgreich. Kein realer Discord-Hörtest in dieser Umgebung.

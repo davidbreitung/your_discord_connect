@@ -62,6 +62,7 @@ class BotPlaybackSensor(BotEntity, SensorEntity):
             "queued_announcements": voice.queued_announcements,
             "last_audio_frames": voice.last_audio_frames,
             "last_audio_peak": voice.last_audio_peak,
+            **voice.last_transport,
         }
 
 

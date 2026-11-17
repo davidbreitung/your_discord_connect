@@ -10,9 +10,10 @@ Keine erfundenen Termine, Verantwortlichen oder Fehlerberichte.
   meldet übrige Funktionen allgemein als funktionierend. Cloud-TTS mit hörbarer
   Vorschau, passende Lautstärke und normaler Sprachkanal sind inzwischen bestätigt.
   Status kehrt auf Bereit zurück, erneuter Beitritt hilft nicht. Diagnose in HA
-  anhand Frame-/Pegelwerten fortsetzen; konkrete Fehlertexte fehlen bislang. Lokale
-  Decoderfehler-/Pegel-Diagnose vorbereitet; reale Ursache und erfolgreicher
-  Hörtest weiterhin offen. Keine spekulative Änderung von Voice-Verschlüsselung.
+  anhand Transportwerten fortsetzen: erster Diagnosecommit `4e2fb3b` liefert
+  **100 PCM-Frames / Peak 8708**, also nicht-stumme lokale Daten. Erweiterte
+  Paket-/DAVE-Diagnose im nachfolgenden main-Stand enthalten; zweiter Discord-Client laut Benutzer
+  ebenfalls stumm. Reale Ursache und erfolgreicher Hörtest weiterhin offen. Keine spekulative Änderung von Voice-Verschlüsselung.
 
 - [ ] Zweiten Windows-Rechner nach [WINDOWS.md](WINDOWS.md) einrichten; Checkout,
   Login, Branch, WSL-/Toolversionen und Einstieg mit `HANDOVER.md` bestätigen.

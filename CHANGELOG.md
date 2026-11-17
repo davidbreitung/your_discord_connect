@@ -1,5 +1,11 @@
 # Änderungen
 
+## Unveröffentlicht – Voice-Transportdiagnose
+
+- Paket-Submits, lokale UDP-Sendefehler und DAVE-Bereitschaft pro Durchsage messen, ohne Verschlüsselung oder Wiederholungen zu ändern.
+- Tatsächlichen Opus-/Paketverschlüsselungs-/Sendepfad mit simuliertem Socket testen; Diagnose enthält keine Paketdaten oder Schlüssel.
+- Benutzerwerte 100 PCM-Frames und Peak 8708 grenzen den offenen TTS-Fehler hinter der lokalen PCM-Verarbeitung ein.
+
 ## Unveröffentlicht – Audio-Diagnose
 
 - FFmpeg-Dekodierungsfehler und fehlende Audioframes werden durch den Lautstärke-Wrapper nicht mehr als erfolgreiches Wiedergabeende verdeckt.

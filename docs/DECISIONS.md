@@ -36,3 +36,12 @@ kann eine anschließend im Code getroffene Implementierungsentscheidung sein.
   HA-Testbasis wurde dadurch nicht auf 2026.11.1 umgestellt.
 - „Umgebung veröffentlicht“ im Chat bezeichnete Cloud-Umgebungsstände, nicht
   automatisch Git-Commits, GitHub-Releases oder HA-Deployments.
+
+## Ergänzung 17.11.2026: Diagnose statt spekulativer Transportänderung
+
+Nach real gemessenen 100 PCM-Frames und Peak 8708 wird der unveränderte
+Discord-Sendepfad mit einem kleinen, zur gepinnten Bibliotheksversion getesteten
+Adapter beobachtet. Hintergrund: Socket-OSErrors können von discord.py unterdrückt
+werden, und „verbunden“ garantiert keine bereite DAVE-Session. Nur Zähler/Protokoll-
+version erfassen; keine Verschlüsselung deaktivieren und keine Empfangsbestätigung
+aus einem lokalen Socket-Submit ableiten. Die konkrete Fehlerursache bleibt offen.

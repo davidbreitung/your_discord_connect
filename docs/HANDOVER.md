@@ -146,3 +146,23 @@ Benutzerentscheidungen und nächsten Schritt aktualisieren. STATUS/TODO dazu
 konsistent halten. Keine erfundenen Ergebnisse und keinen vollständigen privaten
 Chatdump committen. `git status`, Fetch und Fast-Forward-Prüfung vor autorisiertem
 Push; niemals fremde Änderungen durch Force-Push ersetzen.
+
+## Neuester Diagnosefortschritt: PCM vorhanden
+
+Erste Diagnose in `4e2fb3b` committed und nach main gepusht, Manifest bleibt 1.0.1.
+Benutzer lieferte danach **100 Frames, Peak 8708**: rund zwei Sekunden nicht-stummes
+PCM nach Lautstärkeregelung. Der Fehler liegt damit nicht bei fehlenden/stummen
+PCM-Ausgangsdaten dieses Versuchs. Kein Beweis für funktionierendes Opus, DAVE,
+UDP oder Empfang. Gegenprobe mit zweitem Discord-Client ebenfalls stumm, vom Benutzer bestätigt.
+Damit ist ein Fehler nur am ursprünglichen Endgerät unwahrscheinlicher; kein
+Nachweis einer bestimmten Ursache im gemeinsamen Ausgabepfad.
+
+Die nachfolgende Änderung `voice_transport.py`
+misst tatsächliche Socket-Submits/OSErrors sowie DAVE-Protokoll und unbereite
+Sendemomente. discord.py kann OSErrors abfangen; „Bereit“ beweist deshalb keinen
+Transporterfolg. Neue Attribute sind noch nicht in der Benutzerinstallation.
+Commit/Push wurde vom Benutzer beauftragt. Nach Aktualisierung braucht es eine neue Bot-Verbindung und einen
+weiteren Versuch. Keine Verschlüsselung deaktivieren oder Ursache voreilig festlegen.
+
+Prüfung der erweiterten Transportdiagnose: **111 Python-Tests erfolgreich**,
+Ruff und Formatprüfung erfolgreich. Kein realer Discord-Hörtest in dieser Umgebung.

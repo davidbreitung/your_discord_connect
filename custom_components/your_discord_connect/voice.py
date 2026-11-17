@@ -14,6 +14,7 @@ from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.storage import Store
 
 from .const import DOMAIN
+from .voice_transport import MeasuredVoiceClient
 
 LEAVE_ALL = "alle verlassen"
 MAX_TEXT_LENGTH = 255
@@ -88,6 +89,7 @@ class BotVoice:
         self._active_source = None
         self.last_audio_frames = None
         self.last_audio_peak = None
+        self.last_transport = {}
         self._listeners = set()
         self._connection_lock = asyncio.Lock()
         self._speech_lock = asyncio.Lock()
@@ -217,7 +219,9 @@ class BotVoice:
                 else:
                     if voice:
                         await voice.disconnect(force=True)
-                    await target.connect(timeout=20, reconnect=True, self_deaf=True)
+                    await target.connect(
+                        timeout=20, reconnect=True, self_deaf=True, cls=MeasuredVoiceClient
+                    )
             except (discord.DiscordException, TimeoutError, OSError, RuntimeError) as err:
                 if (voice := self.voice_client) and not voice.is_connected():
                     await voice.disconnect(force=True)
@@ -278,6 +282,7 @@ class BotVoice:
         async with self._speech_lock:
             self.last_audio_frames = None
             self.last_audio_peak = None
+            self.last_transport = {}
             self._set_phase("preparing")
             try:
                 await self._play(text, channel_id)
@@ -328,6 +333,8 @@ class BotVoice:
             self._validate_playback(channel_id)
             source.volume = self.volume / 100
             self._active_source = source
+            if isinstance(voice, MeasuredVoiceClient):
+                voice.reset_diagnostics()
             voice.play(source, after=after)
             started = True
             self._set_phase("playing")
@@ -337,6 +344,8 @@ class BotVoice:
             raise voice_error("tts_playback_failed") from err
         finally:
             self._active_source = None
+            if isinstance(voice, MeasuredVoiceClient):
+                self.last_transport = voice.diagnostics()
             if isinstance(source, CheckedVolumeSource):
                 self.last_audio_frames = source.frames_read
                 self.last_audio_peak = source.pcm_peak

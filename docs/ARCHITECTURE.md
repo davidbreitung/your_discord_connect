@@ -153,3 +153,12 @@ und lokale Block-/Peak-Messung. Der Statussensor zeigt diese Werte nach dem Vers
 kein Zugriff auf Nachrichtentext oder Audioinhalt über Diagnoseattribute.
 DAVE-/UDP-Erfolg wird aus diesen Messwerten nicht abgeleitet. Das Datenmodell der
 bestehenden Geräte-/Entitäts-IDs und der verschlüsselte Versand bleiben gleich.
+
+## Erweiterung: Voice-Transportdiagnose
+
+`voice_transport.py` verwendet discord.pys `create_connection_state`-Factory und
+`connect(cls=...)`, um den originalen Opus-/DAVE-/UDP-Pfad unverändert zu messen.
+Die Connection-State-Unterklasse zählt Submits/OSErrors und beobachtet DAVE-
+Bereitschaft; Zähler werden vor `play` zurückgesetzt und nach Ende am Statussensor
+bereitgestellt. Keine Packet-/Key-/Endpoint-Daten verlassen den Adapter.
+`VoiceConnectionState` ist ein Bibliotheksdetail; Upgrades müssen den Adapter testen.

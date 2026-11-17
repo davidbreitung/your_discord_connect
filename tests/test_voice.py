@@ -19,6 +19,7 @@ from homeassistant.helpers import entity_registry as er
 from custom_components.your_discord_connect.const import DOMAIN
 from custom_components.your_discord_connect.gateway import DiscordGateway
 from custom_components.your_discord_connect.voice import LEAVE_ALL, BotVoice, make_audio_source
+from custom_components.your_discord_connect.voice_transport import MeasuredVoiceClient
 
 
 @pytest.fixture
@@ -84,7 +85,7 @@ async def test_join_move_leave_and_duplicate_names(voice_env):
     assert c.current_option == LEAVE_ALL
     await c.select("General (10)")
     voice_env.guild.voice_channels[0].connect.assert_awaited_once_with(
-        timeout=20, reconnect=True, self_deaf=True
+        timeout=20, reconnect=True, self_deaf=True, cls=MeasuredVoiceClient
     )
     assert c.current_option == "General (10)"
     await c.select("General (11)")
@@ -522,3 +523,30 @@ def test_volume_wrapper_preserves_mid_stream_decoder_error():
     assert source.pcm_peak == 500
     with pytest.raises(AudioDecodeError):
         source.read()
+
+
+async def test_transport_diagnostics_are_reset_and_exposed_after_playback(voice_env):
+    c = voice_env.controller
+    # A mock exposing the real interface preserves the controller's isinstance check.
+    voice_env.voice.__class__ = MeasuredVoiceClient
+    expected = {
+        "last_voice_packets_submitted": 105,
+        "last_voice_send_errors": 0,
+        "last_dave_unready_packets": 0,
+        "last_dave_protocol": 1,
+    }
+    voice_env.voice.diagnostics.return_value = expected
+    await c.select("General (10)")
+    c.set_text("Transport test")
+    with (
+        patch.object(c, "_render", new=AsyncMock(return_value=(b"audio", "ffmpeg"))),
+        patch(
+            "custom_components.your_discord_connect.voice.make_audio_source",
+            return_value=MagicMock(),
+        ),
+    ):
+        await c.speak()
+    voice_env.voice.reset_diagnostics.assert_called_once()
+    assert c.last_transport == expected
+    assert c.playback_state == "idle"
+    await c.async_close()

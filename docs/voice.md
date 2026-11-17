@@ -189,3 +189,33 @@ Home Assistant Cloud wird von der geprüften HA-Standard-Engine-Auswahl bevorzug
 Sein Streaming-WAV-Format (WAV-Header mit zunächst null Frames, danach PCM-Daten)
 ist ebenfalls im lokalen Audiotest enthalten. Ein bestandener Format-Test oder
 eine hörbare HA-Vorschau beweist dennoch keine erfolgreiche Discord-Übertragung.
+
+### Erweiterung: tatsächlicher Voice-Sendepfad
+
+Wenn `last_audio_frames` und `last_audio_peak` größer null sind, gibt es lokal
+nicht-stumme PCM-Daten. Eine optionale Fehlermeldung allein genügt dann nicht:
+discord.py 2.7.1 kann UDP-OSErrors pro Paket abfangen und die Wiedergabe trotzdem
+normal beenden. Die zusätzliche Transportdiagnose ergänzt deshalb:
+
+| Attribut | Bedeutung |
+| --- | --- |
+| `last_voice_packets_submitted` | Vom lokalen Socket ohne Fehler angenommene Pakete. **Keine** Empfangsbestätigung von Discord oder Zuhörern. |
+| `last_voice_send_errors` | Lokale OSErrors beim Senden, auch wenn discord.py diese abfängt. |
+| `last_dave_protocol` | Zuletzt beim Paketversand beobachtete DAVE-Protokollversion; null vor erstem Paket, 0 bedeutet keine aktive DAVE-Protokollversion. |
+| `last_dave_unready_packets` | Pakete, bei deren Versand ein DAVE-Protokoll > 0 aktiv war, dessen Session aber nicht verschlüsselungsbereit war. |
+
+Die Werte gelten pro Durchsageversuch und werden beim nächsten Versuch
+zurückgesetzt. Discords abschließende Stille-Pakete zählen mit; die Anzahl kann
+daher z. B. fünf höher sein als `last_audio_frames`. Es werden nur Zähler und die
+Protokollversion erfasst, keine Paketbytes, Adressen, Schlüssel oder Session-IDs.
+Die Diagnose verändert weder Verschlüsselung noch Wiederholungsverhalten.
+
+Viele Sendefehler grenzen auf ein lokales Transportproblem ein. DAVE-unbereite
+Pakete sind ein Hinweis auf die Aushandlung, kein Beweis über den Zustand beim
+Empfänger. Erfolgreiche lokale Submits und DAVE-Bereitschaft schließen spätere
+Netzwerk-/Empfangsprobleme nicht aus. Ein zweiter Discord-Client als Zuhörer hilft,
+eine lokale Wiedergabeeinstellung zu unterscheiden.
+
+Die Erweiterung verwendet einen kleinen Adapter der fest gepinnten discord.py-
+Verbindungsklasse. Für die Messung ist nach Installation ein Neustart von HA bzw.
+ein vollständiges Neuladen der Integration und Neuverbinden des Bots erforderlich.
